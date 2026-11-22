@@ -4,7 +4,7 @@
 
 A tutoring and past-paper website for Sri Lankan students, built for mobile first. Students tap their **grade card**, then a **subject card**. On each subject they find past papers, marking schemes, model papers, school papers and notes, and they can ask for a teacher. The admin gets an instant alert, chooses a teacher, and the lesson time is booked automatically. Students and teachers never contact each other directly.
 
-**Live site:** <https://guidestnd-svg.github.io/tnd-guides/>
+**Live site:** <https://tnd-guides.github.io/tnd-guides/>
 
 ## Guides
 
