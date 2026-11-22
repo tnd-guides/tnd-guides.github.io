@@ -165,7 +165,7 @@ Student pages have an **EN / සිං / த** switch. Translations are in [`js/
 
 ## Google Tag Manager
 
-Every page loads the Google tag for container `GTM-MPL2BV6M`. If you use your own container, replace that ID in the 5 `.html` files. Many users are children, so track simple page views only.
+Every page loads the Google tag for container `GTM-K823GGZ5`. If you use your own container, replace that ID in the 5 `.html` files. Many users are children, so track simple page views only.
 
 ## Your own address (optional)
 
