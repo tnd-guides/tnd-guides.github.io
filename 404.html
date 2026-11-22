@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3b0b0b">
+<meta name="robots" content="noindex">
+<title>Page not found · TND Guides</title>
+<script>
+  /* Old links (…/tnd-guides/…) and capital letters (Admin.html) go to the right page */
+  (function () {
+    var p = location.pathname;
+    var n = p.replace(/^\/tnd-guides(\/|$)/i, "/").toLowerCase();
+    if (n !== p) location.replace(n + location.search + location.hash);
+  })();
+</script>
+<link rel="icon" type="image/svg+xml" href="/img/logo.svg">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <a class="logo" href="/" aria-label="TND Guides home"><img class="logo-img" src="/img/logo.svg" alt="" width="36" height="36"><span class="brand"><b>TND</b> Guides</span></a>
+  </div>
+</header>
+<main class="wrap">
+  <div class="card stack" style="max-width:440px;margin:40px auto;text-align:center">
+    <img src="/img/logo.svg" alt="" width="72" height="72" style="justify-self:center;border-radius:18px">
+    <h2 style="margin:0">Page not found</h2>
+    <p class="muted" style="margin:0">This link is old or has a typo.<br>පිටුව හමු නොවීය · பக்கம் கிடைக்கவில்லை</p>
+    <a class="btn yellow block" href="/">Go to TND Guides home</a>
+    <a class="btn block" href="/admin.html">Admin page</a>
+  </div>
+</main>
+</body>
+</html>
