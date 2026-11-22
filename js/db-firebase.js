@@ -34,10 +34,13 @@ async function withAdmin(u) {
   if (!i || !i.verified) return i;
   if (!adminCache.has(i.uid)) {
     let ok = false;
-    try { await getDoc(doc(fs, "teacherPrivate", "admin-check")); ok = true; } catch (e) { ok = false; }
-    adminCache.set(i.uid, ok);
+    let why = "";
+    try { await getDoc(doc(fs, "teacherPrivate", "admin-check")); ok = true; }
+    catch (e) { ok = false; why = (e && (e.code || e.message)) || "unknown"; console.warn("Admin check:", why, i.email); }
+    adminCache.set(i.uid, { ok, why });
   }
-  i.isAdmin = adminCache.get(i.uid);
+  i.isAdmin = adminCache.get(i.uid).ok;
+  i.adminWhy = adminCache.get(i.uid).why;
   return i;
 }
 /* Where the "confirm email" and "reset password" links come back to */

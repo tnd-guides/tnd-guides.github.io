@@ -1,6 +1,6 @@
 /* TND Guides – student app
    Home (grade cards) → subject cards → subject page (papers + get a teacher) → request form */
-import DB, { LIVE } from "./db.js";
+import DB, { LIVE } from "./db.js?v=5";
 import { langSwitch, startTranslation } from "./i18n.js";
 import { $, safe, icon, shortId, byOrder, colorOf, starsHtml, niceDate, timeAgo, hasContactInfo, showToast,
          demoBanner, bottomNav, subjectIcon, gradeLabel, accountChip, loginLink, SECTIONS, DAYS, DAY_NAMES, TIMES, PAPER_KINDS, MEDIUMS } from "./common.js";

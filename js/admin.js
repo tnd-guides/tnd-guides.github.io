@@ -1,5 +1,5 @@
 /* TND Guides – admin page */
-import DB, { LIVE } from "./db.js";
+import DB, { LIVE } from "./db.js?v=5";
 import { SUBJECT_ICONS } from "./icons.js";
 import { $, safe, icon, shortId, byOrder, colorOf, starsHtml, niceDate, timeAgo, freeText, showToast, demoBanner,
          initials, subjectIcon, gradeLabel, cleanLink, teacherScore, findNextTime, authMessage,
@@ -31,7 +31,7 @@ DB.onUser(user => {
   else {
     $("login").hidden = false; $("app").hidden = true; $("logout").hidden = true;
     if (user && !user.verified) $("login-error").innerHTML = `<p class="msg bad">Confirm your email first. <a href="login.html?next=admin.html">Open the confirm page</a>.</p>`;
-    else if (user && user.email) $("login-error").innerHTML = `<p class="msg bad">${safe(user.email)} is not an admin account. <a href="#" id="switch-user">Log out</a> and use the admin email.</p>`;
+    else if (user && user.email) $("login-error").innerHTML = `<p class="msg bad">${safe(user.email)} is not an admin account. <a href="#" id="switch-user">Log out</a> and use the admin email.${user.adminWhy ? `<br><small>Firebase says: ${safe(user.adminWhy)}</small>` : ""}</p>`;
   }
 });
 async function doLogin() {

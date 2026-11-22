@@ -19,5 +19,5 @@
 import { firebaseConfig } from "./config.js";
 
 export const LIVE = !!firebaseConfig.apiKey;
-const DB = LIVE ? await import("./db-firebase.js") : await import("./db-local.js");
+const DB = LIVE ? await import("./db-firebase.js?v=5") : await import("./db-local.js?v=5");
 export default DB;
