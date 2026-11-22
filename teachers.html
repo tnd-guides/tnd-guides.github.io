@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (Google Tag Manager container GTM-MPL2BV6M) -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-MPL2BV6M"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3b0b0b">
+<title>Teachers · TND Guides</title>
+<meta name="description" content="Meet the TND Guides teachers: qualifications, subjects and student ratings.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;600;700;800&family=Noto+Sans+Tamil:wght@400;600;700;800&display=swap">
+<link rel="icon" type="image/svg+xml" href="img/logo.svg">
+<link rel="apple-touch-icon" href="img/logo.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="TND Guides home"><img class="logo-img" src="img/logo.svg" alt="" width="36" height="36"><span class="brand"><b>TND</b> Guides</span></a>
+    <nav class="topnav">
+      <a href="index.html">Home</a>
+      <a href="index.html#mine">My lessons</a>
+      <a href="teachers.html" class="on">Teachers</a>
+      <a href="forum.html">Ask the class</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <span class="tag">Checked by the admin</span>
+    <h1>Our <span>teachers</span></h1>
+    <p>Tap a subject under a teacher to ask for a lesson with them. The admin arranges everything.</p>
+  </div>
+</section>
+
+<main class="wrap stack">
+  <label class="field" for="search">Find a teacher or subject
+    <input id="search" type="search" placeholder="e.g. Physics or Perera">
+  </label>
+  <div class="chips" id="filter"></div>
+  <div class="grid-2" id="list"><p class="loading">Loading teachers…</p></div>
+</main>
+
+<footer><div class="wrap">Teachers' phone numbers are private. Ask for a lesson and the admin will arrange it.</div></footer>
+
+<script type="module" src="js/teachers.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "TND Guides",
+  "short_name": "TND Guides",
+  "description": "Past papers, marking schemes and tutors for Sri Lankan students, Grade 1 to A/L.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f5f8",
+  "theme_color": "#3b0b0b",
+  "icons": [
+    { "src": "img/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

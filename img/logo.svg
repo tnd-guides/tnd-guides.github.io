@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="TND Guides">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c62828"/>
+      <stop offset="1" stop-color="#4a0d0d"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.82" cy="0.12" r="0.7">
+      <stop offset="0" stop-color="#ff8a4c" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ff8a4c" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- tile -->
+  <rect width="128" height="128" rx="30" fill="url(#bg)"/>
+  <rect width="128" height="128" rx="30" fill="url(#glow)"/>
+  <!-- open book -->
+  <path d="M20 52c18-9 33-7 44 2v52c-11-8-26-10-44-3z" fill="#ffffff"/>
+  <path d="M108 52c-18-9-33-7-44 2v52c11-8 26-10 44-3z" fill="#ffe7a8"/>
+  <path d="M64 54v52" stroke="#8a1a1a" stroke-width="2.5" stroke-opacity=".35"/>
+  <g fill="none" stroke-linecap="round" stroke-width="3.2">
+    <path d="M30 65c9-3.5 17-3 25 1.5M30 77c9-3.5 17-3 25 1.5M30 89c9-3.5 17-3 25 1.5" stroke="#e7c3c0"/>
+    <path d="M98 65c-9-3.5-17-3-25 1.5M98 77c-9-3.5-17-3-25 1.5M98 89c-9-3.5-17-3-25 1.5" stroke="#e2b453"/>
+  </g>
+  <!-- guiding star -->
+  <path d="M64 9c2.2 11.6 5.4 14.8 17 17-11.6 2.2-14.8 5.4-17 17-2.2-11.6-5.4-14.8-17-17 11.6-2.2 14.8-5.4 17-17z" fill="#f2b705"/>
+  <circle cx="89" cy="14" r="3" fill="#f2b705" opacity=".85"/>
+  <circle cx="40" cy="40" r="2.2" fill="#f2b705" opacity=".7"/>
+</svg>

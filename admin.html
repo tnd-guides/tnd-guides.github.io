@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (Google Tag Manager container GTM-MPL2BV6M) -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-MPL2BV6M"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3b0b0b">
+<meta name="robots" content="noindex">
+<title>Admin · TND Guides</title>
+<link rel="icon" type="image/svg+xml" href="img/logo.svg">
+<link rel="apple-touch-icon" href="img/logo.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="TND Guides home"><img class="logo-img" src="img/logo.svg" alt="" width="36" height="36"><span class="brand"><b>TND</b> Guides</span> <span class="badge wait">Admin</span></a>
+    <a href="index.html" class="btn sm">Student site</a>
+    <a href="#" id="logout" class="btn sm" hidden>Log out</a>
+  </div>
+</header>
+
+<div class="alert-bar" id="alert" hidden>
+  <div class="wrap">
+    <span id="alert-text"></span>
+    <button class="btn sm" id="alert-open">Open</button>
+  </div>
+</div>
+
+<!-- ===== Login ===== -->
+<main class="wrap" id="login" hidden>
+  <div class="card stack" style="max-width:440px;margin:30px auto">
+    <span class="eyebrow">Admin only</span>
+    <h2 style="margin:0">Admin log in</h2>
+    <p class="muted" style="margin:0">There is no separate admin password. Log in with the admin Gmail.</p>
+    <button class="btn google block" id="admin-google">
+      <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+      Continue with Google
+    </button>
+    <div class="or"><span>or, if you made a password for the site</span></div>
+    <label class="field" for="email">Email<input id="email" type="email" autocomplete="username"></label>
+    <label class="field" for="password">Password<input id="password" type="password" autocomplete="current-password"></label>
+    <div id="login-error"></div>
+    <button class="btn red block" id="login-go">Log in</button>
+    <a class="link-btn" href="login.html?next=admin.html" style="text-align:center">Forgot password?</a>
+    <p class="hint" id="login-hint" style="margin:0"></p>
+  </div>
+</main>
+
+<!-- ===== Admin app ===== -->
+<main class="wrap" id="app" hidden>
+  <div class="stack" style="margin-bottom:18px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+      <div style="margin-right:auto"><span class="eyebrow">Admin desk</span><h2 style="margin:0">Here is what needs you.</h2></div>
+      <button class="btn sm" id="notify-on" hidden>Turn on pop-up alerts</button>
+    </div>
+    <div class="numbers" id="numbers"></div>
+  </div>
+
+  <div class="tabs" role="tablist" id="tabs">
+    <button class="tab on" data-tab="requests">Requests <span class="count" id="c-requests" hidden></span></button>
+    <button class="tab" data-tab="lessons">Lessons</button>
+    <button class="tab" data-tab="papers">Papers</button>
+    <button class="tab" data-tab="teachers">Teachers</button>
+    <button class="tab" data-tab="cards">Grades &amp; subjects</button>
+    <button class="tab" data-tab="forum">Forum</button>
+  </div>
+
+  <!-- Requests -->
+  <section id="tab-requests" class="stack">
+    <p class="lead" style="margin:0">Press <b>Choose teacher</b>, compare, then <b>Book</b>. The day and time are picked automatically.</p>
+    <div id="req-open" class="stack"></div>
+    <h3 style="margin:10px 0 0">Booked or finished</h3>
+    <div id="req-closed" class="stack"></div>
+  </section>
+
+  <!-- Lessons -->
+  <section id="tab-lessons" class="stack" hidden>
+    <p class="lead" style="margin:0">Press <b>Finished</b> after a lesson so the student can give stars.</p>
+    <div id="lesson-list" class="stack"></div>
+  </section>
+
+  <!-- Papers -->
+  <section id="tab-papers" class="stack" hidden>
+    <div class="card stack">
+      <h3 style="margin:0">Add a paper or marking scheme</h3>
+      <div class="form-row">
+        <label class="field" for="p-grade">Grade<select id="p-grade"></select></label>
+        <label class="field" for="p-subject">Subject<select id="p-subject"></select></label>
+      </div>
+      <div class="form-row">
+        <label class="field" for="p-kind">Type<select id="p-kind"></select></label>
+        <label class="field" for="p-year">Year<input id="p-year" type="number" inputmode="numeric" min="1990" max="2100"></label>
+        <label class="field" for="p-medium">Medium<select id="p-medium"></select></label>
+      </div>
+      <label class="field" for="p-title">Title <span class="hint">(filled in for you, you can change it)</span><input id="p-title" maxlength="120"></label>
+      <label class="field" for="p-url">PDF link
+        <input id="p-url" type="url" placeholder="https://drive.google.com/file/d/…">
+        <span class="hint">Upload the PDF to Google Drive → Share → "Anyone with the link" → Copy link → paste here.</span>
+      </label>
+      <div id="p-error"></div>
+      <button class="btn yellow block" id="p-add">Add paper</button>
+    </div>
+    <div>
+      <h3 style="margin:6px 0 8px">Papers for <span id="p-showing"></span></h3>
+      <div id="paper-admin-list" class="stack"></div>
+    </div>
+  </section>
+
+  <!-- Teachers -->
+  <section id="tab-teachers" class="stack" hidden>
+    <div class="card stack" id="t-form">
+      <h3 style="margin:0" id="t-form-title">Add a teacher</h3>
+      <div class="form-row">
+        <label class="field" for="t-name">Name<input id="t-name" maxlength="60" placeholder="e.g. Mr. Pradeep Silva"></label>
+        <label class="field" for="t-about">Qualifications<input id="t-about" maxlength="80" placeholder="e.g. B.Sc. (Peradeniya)"></label>
+      </div>
+      <div class="form-row">
+        <label class="field" for="t-years">Years teaching<input id="t-years" type="number" inputmode="numeric" min="0" max="60"></label>
+        <label class="field" for="t-phone">Phone <span class="hint">(only admin sees this)</span><input id="t-phone" maxlength="15" inputmode="tel" placeholder="07X XXX XXXX"></label>
+      </div>
+      <label class="field" for="t-bio">About the teacher <span class="hint">(students see this)</span><textarea id="t-bio" maxlength="300" placeholder="e.g. Makes physics simple with real-life examples."></textarea></label>
+      <label class="field" for="t-photo">Photo link <span class="hint">(optional)</span><input id="t-photo" type="url" placeholder="https://…"></label>
+      <div class="field"><span>Teaches in</span><div class="checks" id="t-mediums"></div></div>
+      <div class="form-row">
+        <label class="field" for="t-grade">Grade<select id="t-grade"></select></label>
+        <div class="field"><span>Subjects in this grade</span><div class="checks" id="t-subjects"></div></div>
+      </div>
+      <div class="small"><span class="muted">Chosen:</span> <span id="t-chosen"></span></div>
+      <div class="field"><span>Free days</span><div class="checks" id="t-days"></div></div>
+      <div class="field"><span>Free times</span><div class="checks" id="t-times"></div></div>
+      <div id="t-error"></div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:10px">
+        <button class="btn yellow" id="t-save">Add teacher</button>
+        <button class="btn" id="t-cancel" hidden>Cancel</button>
+      </div>
+    </div>
+    <div id="teacher-list" class="grid-2"></div>
+  </section>
+
+  <!-- Grade & subject cards -->
+  <section id="tab-cards" class="stack" hidden>
+    <div id="cards-grades">
+      <p class="lead" style="margin:0 0 6px">These are the cards students tap. Tap a grade card to change its subjects.</p>
+      <div id="grade-editor"></div>
+      <div class="card stack" id="grade-form" hidden style="margin-top:16px">
+        <h3 style="margin:0">New grade card</h3>
+        <div class="form-row">
+          <label class="field" for="g-name">Name<input id="g-name" maxlength="30" placeholder="e.g. Grade 11"></label>
+          <label class="field" for="g-label">Short label<input id="g-label" maxlength="3" placeholder="e.g. 11"></label>
+          <label class="field" for="g-section">Group<select id="g-section"></select></label>
+        </div>
+        <div class="field"><span>Colour</span><div class="swatches" id="g-colors"></div></div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:10px"><button class="btn yellow" id="g-add">Add grade card</button><button class="btn" id="g-cancel">Cancel</button></div>
+      </div>
+    </div>
+
+    <div id="cards-subjects" hidden>
+      <button class="back" id="cards-back"></button>
+      <h2 id="edit-title"></h2>
+      <h3 style="margin:10px 0">Subject cards</h3>
+      <div class="cards" id="subject-editor"></div>
+      <div class="card stack" id="subject-form" hidden style="margin-top:16px">
+        <h3 style="margin:0">New subject card</h3>
+        <label class="field" for="s-name">Subject name<input id="s-name" maxlength="40" placeholder="e.g. Art"></label>
+        <div class="field"><span>Icon</span><div class="icon-pick" id="s-icons"></div></div>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:10px"><button class="btn yellow" id="s-add">Add subject card</button><button class="btn" id="s-cancel">Cancel</button></div>
+      </div>
+      <details class="card" style="margin-top:16px">
+        <summary style="cursor:pointer;font-weight:700">Change this grade card</summary>
+        <div class="stack" style="margin-top:12px">
+          <div class="form-row">
+            <label class="field" for="e-name">Name<input id="e-name" maxlength="30"></label>
+            <label class="field" for="e-label">Short label<input id="e-label" maxlength="3"></label>
+            <label class="field" for="e-section">Group<select id="e-section"></select></label>
+          </div>
+          <div class="field"><span>Colour</span><div class="swatches" id="e-colors"></div></div>
+          <button class="btn" id="e-save">Save changes</button>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- Forum -->
+  <section id="tab-forum" class="stack" hidden>
+    <p class="lead" style="margin:0">Answer as Admin, or remove a post that breaks the rules.</p>
+    <div id="forum-list" class="stack"></div>
+  </section>
+
+  <div style="margin-top:28px" id="demo-tools" hidden><button class="btn sm" id="reset">Reset demo data</button> <span class="hint" id="reset-note"></span></div>
+</main>
+
+<footer><div class="wrap">Only the admin sees teacher phone numbers. Students and teachers never contact each other directly.</div></footer>
+
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>

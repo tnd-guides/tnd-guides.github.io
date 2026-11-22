@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (Google Tag Manager container GTM-MPL2BV6M) -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-MPL2BV6M"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3b0b0b">
+<title>TND Guides</title>
+<meta name="description" content="Past papers, marking schemes and tutors for every grade in Sri Lanka. Choose your grade and subject.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;600;700;800&family=Noto+Sans+Tamil:wght@400;600;700;800&display=swap">
+<link rel="icon" type="image/svg+xml" href="img/logo.svg">
+<link rel="apple-touch-icon" href="img/logo.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="TND Guides home"><img class="logo-img" src="img/logo.svg" alt="" width="36" height="36"><span class="brand"><b>TND</b> Guides</span></a>
+    <nav class="topnav">
+      <a href="index.html" class="on">Home</a>
+      <a href="index.html#mine">My lessons</a>
+      <a href="teachers.html">Teachers</a>
+      <a href="forum.html">Ask the class</a>
+    </nav>
+  </div>
+</header>
+
+<!-- Home hero (only on the grade list) -->
+<section class="hero" id="hero">
+  <div class="wrap">
+    <span class="tag">Grade 1 to A/L · Sri Lanka</span>
+    <h1>Papers, marking schemes and <span>teachers</span>.</h1>
+    <p>Tap your grade, then your subject. Get past papers, or ask for a teacher.</p>
+  </div>
+</section>
+
+<main class="wrap">
+
+  <!-- Home: grade cards -->
+  <section id="v-grades">
+    <div class="quick" id="quick" style="margin-bottom:22px"></div>
+    <span class="eyebrow">Start here</span>
+    <h2>Choose your grade</h2>
+    <div id="grade-cards"><p class="loading">Loading grades…</p></div>
+  </section>
+
+  <!-- Subject cards -->
+  <section id="v-subjects" hidden>
+    <a class="back" href="#" id="back-home"></a>
+    <h2 id="subjects-title"></h2>
+    <p class="lead" style="margin-bottom:12px">Choose a subject.</p>
+    <div class="cards" id="subject-cards"></div>
+  </section>
+
+  <!-- Subject page: papers + get a teacher -->
+  <section id="v-subject" class="stack" hidden>
+    <a class="back" id="back-subjects" href="#"></a>
+    <div class="subject-head" id="subject-head"></div>
+    <a class="action-card" id="ask-link" href="#"></a>
+    <div>
+      <h2 style="margin-top:8px">Papers and marking schemes</h2>
+      <div class="chips" id="kind-chips" style="margin-top:8px"></div>
+      <div class="chips" id="medium-chips" style="margin-top:8px"></div>
+    </div>
+    <div id="paper-list" class="stack"></div>
+  </section>
+
+  <!-- Request form -->
+  <section id="v-form" class="stack" hidden>
+    <a class="back" id="back-subject" href="#"></a>
+    <div>
+      <span class="eyebrow">Get a teacher</span>
+      <h2>Tell us what you need</h2>
+      <div id="crumb"></div>
+    </div>
+    <div id="form-gate" class="card gate" hidden></div>
+    <div id="form-body" class="stack">
+    <div class="card stack">
+      <label class="field" for="name">Your first name
+        <input id="name" maxlength="30" placeholder="e.g. Nimali" autocomplete="given-name">
+      </label>
+      <label class="field" for="need">What do you need help with?
+        <textarea id="need" maxlength="300" placeholder="e.g. I don't understand fractions."></textarea>
+      </label>
+      <label class="field" for="prefer">Teacher you would like <span class="hint">(optional)</span>
+        <select id="prefer"></select>
+      </label>
+    </div>
+    <div class="card stack">
+      <h3>Where do you want the lesson?</h3>
+      <div class="choices" id="places">
+        <button type="button" class="choice on" data-place="Online">Online<small>phone or computer</small></button>
+        <button type="button" class="choice" data-place="At school">At school<small>in a classroom</small></button>
+      </div>
+    </div>
+    <div class="card stack">
+      <h3>When are you free?</h3>
+      <p class="hint" style="margin:0">Tap all the days and times that are OK.</p>
+      <div class="choices" id="days"></div>
+      <div class="choices" id="times"></div>
+    </div>
+    <div id="ask-error"></div>
+    <button class="btn yellow big block" id="send">Send my request</button>
+    </div>
+  </section>
+
+  <!-- Sent -->
+  <section id="v-sent" class="card stack" hidden>
+    <span class="eyebrow">Sent</span>
+    <h2>Done! Your request was sent.</h2>
+    <p style="margin:0">Your request number is <span class="badge code" id="sent-id"></span></p>
+    <p class="muted" style="margin:0">The admin got an alert. They will choose a teacher and book a day for you. Check <b>My lessons</b>.</p>
+    <a class="btn yellow block" href="#mine">See my lessons</a>
+    <a class="btn block" href="#">Back to home</a>
+  </section>
+
+  <!-- My lessons -->
+  <section id="v-mine" class="stack" hidden>
+    <div>
+      <span class="eyebrow">My lessons</span>
+      <h2>My requests and lessons</h2>
+      <p class="lead" style="margin:0">From your account.</p>
+    </div>
+    <div id="my-list" class="stack"><p class="loading">Loading…</p></div>
+  </section>
+</main>
+
+<footer><div class="wrap">TND Guides · Never share your phone number. The admin talks to the teacher for you. · <a href="admin.html">Admin</a></div></footer>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

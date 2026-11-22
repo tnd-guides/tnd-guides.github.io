@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (Google Tag Manager container GTM-MPL2BV6M) -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-MPL2BV6M"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3b0b0b">
+<title>Ask the Class · TND Guides</title>
+<meta name="description" content="Ask school questions and help other students.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;600;700;800&family=Noto+Sans+Tamil:wght@400;600;700;800&display=swap">
+<link rel="icon" type="image/svg+xml" href="img/logo.svg">
+<link rel="apple-touch-icon" href="img/logo.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="TND Guides home"><img class="logo-img" src="img/logo.svg" alt="" width="36" height="36"><span class="brand"><b>TND</b> Guides</span></a>
+    <nav class="topnav">
+      <a href="index.html">Home</a>
+      <a href="index.html#mine">My lessons</a>
+      <a href="teachers.html">Teachers</a>
+      <a href="forum.html" class="on">Ask the class</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <span class="tag">Forum</span>
+    <h1>Ask the <span>class</span>.</h1>
+    <p>Post a school question. Other students can answer. Be kind, and never post your phone number.</p>
+  </div>
+</section>
+
+<main class="wrap stack">
+  <button class="btn yellow big block" id="open-ask">Ask a question</button>
+
+  <div class="card stack" id="ask-box" hidden>
+    <h3 style="margin:0">Ask a question</h3>
+    <label class="field" for="q-name">Your first name<input id="q-name" maxlength="30"></label>
+    <div class="form-row">
+      <label class="field" for="q-grade">Grade<select id="q-grade"></select></label>
+      <label class="field" for="q-subject">Subject<select id="q-subject"></select></label>
+    </div>
+    <label class="field" for="q-title">Your question<input id="q-title" maxlength="140" placeholder="e.g. What is photosynthesis?"></label>
+    <label class="field" for="q-text">More details <span class="hint">(optional)</span><textarea id="q-text" maxlength="600"></textarea></label>
+    <div id="ask-error"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><button class="btn yellow" id="post">Post question</button><button class="btn" id="cancel">Cancel</button></div>
+  </div>
+
+  <div>
+    <h2 style="margin:6px 0 8px">Questions</h2>
+    <div class="chips" id="filter"></div>
+  </div>
+  <div id="list" class="stack"></div>
+</main>
+
+<footer><div class="wrap">Need a private teacher? Choose your grade on the <a href="index.html">home page</a>. The admin will arrange it.</div></footer>
+
+<script type="module" src="js/forum.js"></script>
+</body>
+</html>

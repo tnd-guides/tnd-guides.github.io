@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (Google Tag Manager container GTM-MPL2BV6M) -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-MPL2BV6M"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3b0b0b">
+<title>Log in · TND Guides</title>
+<meta name="description" content="Log in to TND Guides with Google or your email.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;600;700;800&family=Noto+Sans+Tamil:wght@400;600;700;800&display=swap">
+<link rel="icon" type="image/svg+xml" href="img/logo.svg">
+<link rel="apple-touch-icon" href="img/logo.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="TND Guides home"><img class="logo-img" src="img/logo.svg" alt="" width="36" height="36"><span class="brand"><b>TND</b> Guides</span></a>
+    <nav class="topnav">
+      <a href="index.html">Home</a>
+      <a href="teachers.html">Teachers</a>
+      <a href="forum.html">Ask the class</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="auth-box">
+
+    <!-- Log in / Create account -->
+    <section id="v-start" class="card stack" hidden>
+      <div class="auth-tabs" role="tablist">
+        <button class="on" id="tab-login" role="tab" aria-selected="true">Log in</button>
+        <button id="tab-signup" role="tab" aria-selected="false">Create account</button>
+      </div>
+
+      <button class="btn google block" id="google">
+        <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+        Continue with Google
+      </button>
+      <div class="or"><span>or use your email</span></div>
+
+      <label class="field" for="su-name" id="row-name" hidden>Your name<input id="su-name" maxlength="40" autocomplete="name" placeholder="e.g. Nimali Perera"></label>
+      <label class="field" for="email">Email<input id="email" type="email" autocomplete="email" inputmode="email" placeholder="you@gmail.com"></label>
+      <label class="field" for="password">Password
+        <span class="pw-wrap">
+          <input id="password" type="password" autocomplete="current-password" minlength="6">
+          <button type="button" class="pw-eye" id="pw-eye" aria-label="Show password">Show</button>
+        </span>
+      </label>
+      <label class="field" for="password2" id="row-pw2" hidden>Type the password again<input id="password2" type="password" autocomplete="new-password"></label>
+      <p class="hint" id="pw-hint" hidden style="margin:0">At least 6 letters or numbers.</p>
+
+      <div id="start-msg"></div>
+      <button class="btn yellow big block" id="go">Log in</button>
+      <button class="link-btn" id="to-forgot">Forgot password?</button>
+    </section>
+
+    <!-- Forgot password -->
+    <section id="v-forgot" class="card stack" hidden>
+      <button class="back" id="forgot-back"></button>
+      <h2 style="margin:0">Forgot your password?</h2>
+      <p class="muted" style="margin:0">Type your email. We will send you a link to make a new password.</p>
+      <label class="field" for="f-email">Email<input id="f-email" type="email" autocomplete="email" inputmode="email"></label>
+      <div id="forgot-msg"></div>
+      <button class="btn yellow big block" id="send-reset">Send reset link</button>
+    </section>
+
+    <!-- Check your email -->
+    <section id="v-verify" class="card stack" hidden>
+      <span class="auth-icon" id="verify-icon"></span>
+      <h2 style="margin:0">Check your email</h2>
+      <p style="margin:0">We sent a confirm link to <b id="verify-email"></b>. Open it, then come back and press the button below.</p>
+      <p class="hint" style="margin:0">Can't find it? Look in the Spam or Promotions folder.</p>
+      <div id="verify-msg"></div>
+      <button class="btn yellow big block" id="verified">I confirmed my email</button>
+      <button class="btn block" id="resend">Send the email again</button>
+      <button class="btn block" id="demo-verify" hidden>Demo: confirm now</button>
+      <button class="link-btn" id="verify-logout">Use another account</button>
+    </section>
+
+    <!-- Logged in -->
+    <section id="v-account" class="card stack" hidden>
+      <div class="tcard-top">
+        <span class="avatar" id="acc-avatar"></span>
+        <div style="min-width:0"><h2 style="margin:0" id="acc-name"></h2><div class="muted small" id="acc-email" style="overflow-wrap:anywhere"></div></div>
+      </div>
+      <p class="msg good" style="margin:0">You are logged in.</p>
+      <a class="btn yellow block" id="continue" href="index.html">Continue</a>
+      <a class="btn block" href="index.html#mine">My lessons</a>
+      <button class="btn block" id="logout">Log out</button>
+    </section>
+
+    <p class="loading" id="v-loading">Loading…</p>
+  </div>
+</main>
+
+<footer><div class="wrap">TND Guides keeps your email private. Teachers never see it.</div></footer>
+
+<script type="module" src="js/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+rules_version = '2';
+
+// TND Guides – Firestore security rules
+// Paste this whole file into Firebase console → Firestore Database → Rules → Publish.
+// ADMINS: put your admin Gmail(s) in the list in isAdmin() below, in small letters,
+// each in 'single quotes', separated by commas. This list is the ONLY place admins are set,
+// and it stays private inside Firebase. Do not commit your real emails to GitHub.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    // Logged in AND email confirmed (Google accounts are confirmed automatically)
+    function verified() { return signedIn() && request.auth.token.email_verified == true; }
+    function isAdmin() {
+      return verified()
+        && request.auth.token.email.lower() in ['admin@example.com'];
+    }
+    function isOwner() { return signedIn() && resource.data.uid == request.auth.uid; }
+    function newData() { return request.resource.data; }
+    function textOk(field, max) { return newData()[field] is string && newData()[field].size() <= max; }
+    // Blocks Sri Lankan mobile numbers and email addresses
+    function noContact(s) {
+      return !s.matches('.*(\\+?94|0)\\s?7[0-9][\\s-]?[0-9]{3}[\\s-]?[0-9]{4}.*')
+          && !s.matches('.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}.*');
+    }
+
+    // Grade and subject cards: everyone can read, only admin can change
+    match /grades/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Teacher profiles: everyone can read, only admin can change
+    match /teachers/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Teacher phone numbers: admin only
+    match /teacherPrivate/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // Papers and marking schemes: everyone can read, only admin can change
+    match /papers/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Student requests: a student can create and read only their own
+    match /requests/{id} {
+      allow read: if isAdmin() || isOwner();
+      allow create: if verified()
+        && newData().uid == request.auth.uid
+        && newData().status == 'new'
+        && textOk('student', 40) && textOk('need', 400) && textOk('subject', 60)
+        && noContact(newData().student + ' ' + newData().need);
+      allow update, delete: if isAdmin();
+    }
+
+    // Lessons: made by admin; the student may only add stars once, after the lesson
+    match /sessions/{id} {
+      allow read: if isAdmin() || isOwner();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        isOwner()
+        && resource.data.status == 'done'
+        && resource.data.stars == 0
+        && newData().diff(resource.data).affectedKeys().hasOnly(['stars', 'comment'])
+        && newData().stars is int && newData().stars >= 1 && newData().stars <= 5
+        && textOk('comment', 200) && noContact(newData().comment)
+      );
+    }
+
+    // Forum
+    match /posts/{id} {
+      allow read: if true;
+      // anyone can post (guests get an invisible anonymous login)
+      allow create: if signedIn()
+        && newData().uid == request.auth.uid
+        && newData().answerCount == 0
+        && textOk('name', 40) && textOk('title', 160) && textOk('text', 800)
+        && noContact(newData().name + ' ' + newData().title + ' ' + newData().text);
+      // anyone signed in may add 1 to the answer counter; admin may do anything
+      allow update: if isAdmin() || (
+        signedIn()
+        && newData().diff(resource.data).affectedKeys().hasOnly(['answerCount'])
+        && newData().answerCount == resource.data.answerCount + 1
+      );
+      allow delete: if isAdmin();
+
+      match /answers/{answerId} {
+        allow read: if true;
+        allow create: if signedIn()
+          && newData().uid == request.auth.uid
+          && (newData().admin == false || isAdmin())
+          && textOk('name', 40) && textOk('text', 800)
+          && noContact(newData().name + ' ' + newData().text);
+        allow delete: if isAdmin();
+      }
+    }
+  }
+}
