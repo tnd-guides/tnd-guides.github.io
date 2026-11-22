@@ -9,12 +9,12 @@
    ================================================================ */
 
 export const firebaseConfig = {
-  apiKey: "AIzaSyDubvDHjd6AR3HHRmEZwBTO1nqWWPsmmRE",
-  authDomain: "guru-hub-d962e.firebaseapp.com",
-  projectId: "guru-hub-d962e",
-  storageBucket: "guru-hub-d962e.firebasestorage.app",
-  messagingSenderId: "547358644431",
-  appId: "1:547358644431:web:06c595f931b942b662ffba"
+  apiKey: "AIzaSyA5IlrpWPn-qkPF9-z_IFEU1l5Ee6WR2Ng",
+  authDomain: "tnd-guides.firebaseapp.com",
+  projectId: "tnd-guides",
+  storageBucket: "tnd-guides.firebasestorage.app",
+  messagingSenderId: "556221539933",
+  appId: "1:556221539933:web:5bc1d42bad1c458c8b0fb4"
 };
 
 export const SITE_NAME = "TND Guides";
