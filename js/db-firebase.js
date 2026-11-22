@@ -34,7 +34,7 @@ async function withAdmin(u) {
   if (!i || !i.verified) return i;
   if (!adminCache.has(i.uid)) {
     let ok = false;
-    try { await getDoc(doc(fs, "teacherPrivate", "__admin_check__")); ok = true; } catch (e) { ok = false; }
+    try { await getDoc(doc(fs, "teacherPrivate", "admin-check")); ok = true; } catch (e) { ok = false; }
     adminCache.set(i.uid, ok);
   }
   i.isAdmin = adminCache.get(i.uid);
