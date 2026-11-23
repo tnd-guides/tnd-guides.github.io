@@ -1,5 +1,5 @@
 /* TND Guides – forum page */
-import DB, { LIVE } from "./db.js?v=5";
+import DB, { LIVE } from "./db.js?v=6";
 import { langSwitch, startTranslation } from "./i18n.js";
 import { $, safe, byOrder, timeAgo, hasContactInfo, showToast, demoBanner, bottomNav, icon, accountChip, SECTIONS } from "./common.js";
 

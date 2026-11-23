@@ -17,6 +17,12 @@ service cloud.firestore {
         && request.auth.token.email.lower() in ['admin@example.com'];
     }
     function isOwner() { return signedIn() && resource.data.uid == request.auth.uid; }
+    // Student has paid and their time has not ended
+    function hasAccess() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/access/$(request.auth.uid))
+        && get(/databases/$(database)/documents/access/$(request.auth.uid)).data.untilMs > request.time.toMillis();
+    }
     function newData() { return request.resource.data; }
     function textOk(field, max) { return newData()[field] is string && newData()[field].size() <= max; }
     // Blocks Sri Lankan mobile numbers and email addresses
@@ -42,10 +48,56 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
-    // Papers and marking schemes: everyone can read, only admin can change
+    // Papers and marking schemes: everyone sees the list, only admin can change
     match /papers/{id} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // Links to paid papers: only students who paid (and admins) can read them
+    match /paperLinks/{id} {
+      allow read: if isAdmin() || hasAccess();
+      allow write: if isAdmin();
+    }
+
+    // Price and "how to pay" text: everyone can read, only admin can change
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Who has unlocked papers, and until when: only admin can change
+    match /access/{uid} {
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // Payment details a student sends; the admin checks and approves
+    match /payments/{id} {
+      allow read: if isAdmin() || isOwner();
+      allow create: if verified()
+        && newData().uid == request.auth.uid
+        && newData().status == 'pending'
+        && newData().amount is int && newData().amount > 0 && newData().amount < 1000000
+        && textOk('ref', 60) && textOk('note', 150) && textOk('method', 30);
+      allow update, delete: if isAdmin();
+    }
+
+    // Teachers asking to join (phone number is only for the admin)
+    match /teacherApps/{uid} {
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create, update: if isAdmin() || (
+        verified()
+        && request.auth.uid == uid
+        && newData().uid == uid
+        && newData().status == 'pending'
+        && (resource == null || resource.data.status != 'approved')
+        && textOk('name', 60) && textOk('phone', 15) && textOk('bio', 300) && textOk('areas', 120)
+        && noContact(newData().name + ' ' + newData().bio + ' ' + newData().areas)
+        && newData().subjects is list && newData().subjects.size() <= 80
+        && newData().classes is list && newData().classes.size() <= 4
+      );
+      allow delete: if isAdmin();
     }
 
     // Student requests: a student can create and read only their own

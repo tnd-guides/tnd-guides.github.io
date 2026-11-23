@@ -170,3 +170,23 @@ Every page loads the Google tag for container `GTM-K823GGZ5`. If you use your ow
 ## Your own address (optional)
 
 Buy a domain (for example `guruhub.lk`), add it in GitHub **Settings → Pages → Custom domain**, and add it to Firebase **Authorized domains**.
+
+## Paid papers (students pay to open papers)
+
+- In **Papers**, tick **Free for everyone** for a paper anyone can open. Leave it unticked and the paper is **locked** until the student pays.
+- In **Payments → Price and how students pay**, type the price (e.g. `Rs. 500`), for how long (e.g. `for 1 month`) and your bank or eZ Cash details. Students see this on the **Unlock all papers** page.
+- A student pays you (bank, eZ Cash…), then types the amount and reference number on the site. You get an alert and the **Payments** tab shows a red number.
+- Check the money really arrived, then press **Unlock 1 month**, **3 months** or **1 year**. The student's papers open at once. If the money didn't arrive, press **Money not received**.
+- **Students with unlocked papers** shows everyone who has access and until when. You can add a month or lock papers again.
+
+The paper links are hidden by the Firebase rules until the student has paid. Someone who already opened a Google Drive link could still share it, so for important papers you can turn off downloading in Drive's sharing settings.
+
+## Teachers joining
+
+- Teachers open **Teach with us** (`join.html`, also linked on the Teachers page and the home page). They log in and send their subjects, district, towns, class types (online, group, hall, individual) with fees, and free times. Their phone number goes only to you.
+- In the **Teachers** tab, a list **Teachers who want to join** appears at the top. Call the teacher if you need to, then press **Accept and add**. They appear on the Teachers page straight away, with their fees and area. Or press **Reject** and type a reason they will see.
+- You can change any teacher's fees, district and class types later with **Change**.
+
+## Updating the rules after a site update
+
+When the site gets new features, `firestore.rules` may change. Open it on GitHub, copy it, paste it into **Firestore Database → Rules**, put your admin Gmail(s) back into the `isAdmin()` list, and click **Publish**.

@@ -1,9 +1,9 @@
 /* TND Guides – student app
    Home (grade cards) → subject cards → subject page (papers + get a teacher) → request form */
-import DB, { LIVE } from "./db.js?v=5";
+import DB, { LIVE } from "./db.js?v=6";
 import { langSwitch, startTranslation } from "./i18n.js";
 import { $, safe, icon, shortId, byOrder, colorOf, starsHtml, niceDate, timeAgo, hasContactInfo, showToast,
-         demoBanner, bottomNav, subjectIcon, gradeLabel, accountChip, loginLink, SECTIONS, DAYS, DAY_NAMES, TIMES, PAPER_KINDS, MEDIUMS } from "./common.js";
+         demoBanner, bottomNav, subjectIcon, gradeLabel, accountChip, loginLink, accessActive, lowestFee, SECTIONS, DAYS, DAY_NAMES, TIMES, PAPER_KINDS, MEDIUMS } from "./common.js";
 
 demoBanner(LIVE);
 bottomNav(location.hash === "#mine" ? "mine" : "home");
@@ -13,6 +13,8 @@ startTranslation();
 
 let grades = [], papers = [], teachers = [], myRequests = [], mySessions = [];
 let user = null, userKnown = false, stopMine = [];
+/* Paid papers */
+let access = null, links = {}, myPayments = [], paySettings = {}, stopLinks = null;
 const here = () => "index.html" + location.hash;
 /* Card shown instead of a form when the student must log in or confirm their email first */
 function gateHtml(what) {
@@ -30,7 +32,7 @@ function setMyName(n) { try { localStorage.setItem("guruhub_me", n); } catch (e)
 const findGrade = id => grades.find(g => g.id === id);
 
 /* ---------- Screens (address after #) ---------- */
-const VIEWS = ["grades", "subjects", "subject", "form", "sent", "mine"];
+const VIEWS = ["grades", "subjects", "subject", "form", "sent", "mine", "unlock"];
 function show(v) { VIEWS.forEach(x => { $("v-" + x).hidden = x !== v; }); $("hero").hidden = v !== "grades"; }
 
 function route() {
@@ -40,6 +42,7 @@ function route() {
     (h === "mine" && a.getAttribute("href").endsWith("#mine")) || (h !== "mine" && a.getAttribute("href") === "index.html")));
   if (h === "mine") { show("mine"); drawMine(); }
   else if (h === "sent") show("sent");
+  else if (h === "unlock") { show("unlock"); drawUnlock(); }
   else if (p[0] === "grade" && p.length === 2) { show("subjects"); drawSubjects(p[1]); }
   else if (p[0] === "grade" && p.length === 3) { show("subject"); drawSubject(p[1], +p[2]); }
   else if (p[0] === "grade" && p[3] === "ask") { show("form"); drawForm(p[1], +p[2], p[4] || ""); }
@@ -53,7 +56,7 @@ function drawQuick() {
     ["#mine", "list", "My lessons", "Requests and stars"],
     ["teachers.html", "users", "Teachers", "See our teachers"],
     ["forum.html", "chat", "Ask the class", "Questions and answers"],
-    ["#papers", "file", "Papers", "Pick a grade below"]
+    ["join.html", "userplus", "Teach with us", "For teachers"]
   ];
   $("quick").innerHTML = q.map(([href, ic, t, s]) =>
     `<a href="${href}" ${href === "#papers" ? 'data-scroll="1"' : ""}><span class="qi">${icon(ic, 22)}</span>${t}<small>${s}</small></a>`).join("");
@@ -118,18 +121,81 @@ function drawSubject(gid, i) {
   if (!list.length) { $("paper-list").innerHTML = `<p class="muted">Nothing for this choice. Try "All".</p>`; return; }
   const years = [...new Set(list.map(p => p.year))].sort((a, b) => b - a);
   const order = PAPER_KINDS.map(k => k.id);
-  $("paper-list").innerHTML = years.map(y => `
+  const paid = mine.some(p => !p.free);
+  const open = accessActive(access);
+  const banner = !paid ? "" : open
+    ? `<p class="msg good">${icon("unlock", 18)} Papers unlocked until <b>${niceDate(new Date(access.untilMs).toISOString())}</b></p>`
+    : `<a class="unlock-card" href="#unlock"><span class="ai">${icon("lock", 22)}</span><span class="at">Unlock all papers${paySettings.price ? `<small>${safe(paySettings.price)}${paySettings.period ? " · " + safe(paySettings.period) : ""}</small>` : "<small>Pay once, open every paper</small>"}</span>${icon("chevron", 20)}</a>`;
+  $("paper-list").innerHTML = banner + years.map(y => `
     <div class="year-group">
       <p class="year-title">${safe(y)}</p>
       ${list.filter(p => p.year === y).sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind)).map(p => {
         const k = PAPER_KINDS.find(x => x.id === p.kind) || PAPER_KINDS[0];
-        return `<a class="paper" href="${safe(p.url)}" target="_blank" rel="noopener">
+        const url = p.free ? p.url : links[p.id];
+        if (!url) return `<a class="paper locked" href="#unlock">
           <span class="pi ${k.id}">${icon(k.icon, 22)}</span>
           <span class="pt"><b>${safe(p.title || k.one)}</b><span>${k.one} · ${safe(p.medium)} medium</span></span>
+          <span class="po lock">${icon("lock", 20)}</span>
+        </a>`;
+        return `<a class="paper" href="${safe(url)}" target="_blank" rel="noopener">
+          <span class="pi ${k.id}">${icon(k.icon, 22)}</span>
+          <span class="pt"><b>${safe(p.title || k.one)}</b><span>${k.one} · ${safe(p.medium)} medium${p.free ? " · Free" : ""}</span></span>
           <span class="po">${icon("external", 20)}</span>
         </a>`;
       }).join("")}
     </div>`).join("");
+}
+
+/* ---------- Unlock papers (pay, then admin approves) ---------- */
+const PAY_METHODS = ["Bank transfer", "eZ Cash", "mCash", "Cash to admin", "Other"];
+function drawUnlock() {
+  const box = $("unlock-body");
+  if (!userKnown) { box.innerHTML = `<p class="loading">Loading…</p>`; return; }
+  if (!user || !user.verified) { box.innerHTML = `<div class="card gate">${gateHtml("unlock papers")}</div>`; return; }
+  if (accessActive(access)) {
+    box.innerHTML = `<div class="card stack"><p class="msg good" style="margin:0">${icon("unlock", 18)} Your papers are unlocked until <b>${niceDate(new Date(access.untilMs).toISOString())}</b>.</p>
+      <a class="btn yellow block" href="#">Go to papers</a></div>`;
+    return;
+  }
+  const pending = myPayments.find(p => p.status === "pending");
+  if (pending) {
+    box.innerHTML = `<div class="card stack"><h3 style="margin:0">We got your payment details</h3>
+      <p class="muted" style="margin:0">The admin will check your payment (reference <b>${safe(pending.ref)}</b>) and unlock the papers. This usually takes less than a day.</p>
+      <a class="btn block" href="#">Back to home</a></div>`;
+    return;
+  }
+  const rejected = myPayments.filter(p => p.status === "rejected").sort((a, b) => b.made.localeCompare(a.made))[0];
+  box.innerHTML = `
+    ${rejected ? `<p class="msg bad">Your last payment (reference ${safe(rejected.ref)}) could not be confirmed. Please check and send it again.</p>` : ""}
+    <div class="card stack">
+      <div class="price-line"><span class="ai">${icon("money", 22)}</span><div><b class="price">${safe(paySettings.price || "Ask the admin for the price")}</b>${paySettings.period ? `<div class="muted small">${safe(paySettings.period)}</div>` : ""}</div></div>
+      <div><h3 style="margin:0 0 6px">How to pay</h3><div class="pay-info">${safe(paySettings.howToPay || "The admin has not added payment details yet. Please check again soon.")}</div></div>
+    </div>
+    <div class="card stack">
+      <h3 style="margin:0">After you pay, tell us here</h3>
+      <div class="form-row">
+        <label class="field" for="pay-amount">Amount you paid (Rs.)<input id="pay-amount" type="number" inputmode="numeric" min="0"></label>
+        <label class="field" for="pay-method">How you paid<select id="pay-method">${PAY_METHODS.map(m => `<option>${m}</option>`).join("")}</select></label>
+      </div>
+      <label class="field" for="pay-ref">Receipt or reference number<input id="pay-ref" maxlength="60" placeholder="e.g. 4582 1190 or TXN12345"></label>
+      <label class="field" for="pay-note">Anything else? <span class="hint">(optional)</span><input id="pay-note" maxlength="150"></label>
+      <div id="pay-error"></div>
+      <button class="btn yellow big block" id="pay-send">Send payment details</button>
+    </div>`;
+}
+async function sendPayment() {
+  const amount = parseInt($("pay-amount").value, 10) || 0, ref = $("pay-ref").value.trim(), note = $("pay-note").value.trim();
+  let problem = "";
+  if (!amount) problem = "Please type the amount you paid.";
+  else if (!ref) problem = "Please type the receipt or reference number.";
+  else if (hasContactInfo(note)) problem = "Please remove phone numbers or emails.";
+  if (problem) { $("pay-error").innerHTML = `<p class="msg bad">${problem}</p>`; return; }
+  $("pay-send").disabled = true;
+  try {
+    await DB.add("payments", { uid: user.uid, email: user.email, name: user.name, amount, method: $("pay-method").value,
+      ref, note, made: new Date().toISOString(), status: "pending" });
+    showToast("Sent! The admin will check your payment.");
+  } catch (e) { console.error(e); $("pay-error").innerHTML = `<p class="msg bad">Could not send. Check your internet and try again.</p>`; $("pay-send").disabled = false; }
 }
 
 /* ---------- Request form ---------- */
@@ -148,7 +214,7 @@ function drawForm(gid, i, preferId) {
   const fit = teachers.filter(t => (t.subjects || []).includes(key));
   const keep = preferId || $("prefer").value;
   $("prefer").innerHTML = `<option value="">Any good teacher (admin chooses)</option>` +
-    fit.map(t => `<option value="${t.id}">${safe(t.name)}</option>`).join("");
+    fit.map(t => `<option value="${t.id}">${safe(t.name)}${lowestFee(t.classes) ? " · from " + safe(lowestFee(t.classes)) : ""}</option>`).join("");
   if (keep && fit.some(t => t.id === keep)) $("prefer").value = keep;
   drawTimes();
 }
@@ -238,21 +304,31 @@ document.addEventListener("click", e => {
   else if (d.medium) { filter.medium = d.medium; route(); }
   else if (d.star) { const [id, n] = d.star.split("|"); chosenStars[id] = +n; drawMine(); }
   else if (d.rate) sendReview(d.rate);
+  else if (b.id === "pay-send") sendPayment();
 });
 
 /* ---------- Start ---------- */
-const rerender = () => { if ($("v-form").hidden) route(); };
+const typingUnlock = () => !$("v-unlock").hidden && document.activeElement && !!document.activeElement.closest("#v-unlock input, #v-unlock select");
+const rerender = () => { if ($("v-form").hidden && !typingUnlock()) route(); };
 DB.watch("grades", l => { grades = l; route(); }, null, () => { $("grade-cards").innerHTML = `<p class="msg bad">Could not load. Check your internet.</p>`; });
 DB.watch("papers", l => { papers = l; rerender(); });
+DB.watch("settings", l => { paySettings = l.find(x => x.id === "payment") || {}; rerender(); });
 DB.watch("teachers", l => { teachers = l; if (!$("v-form").hidden) route(); });
 DB.onUser(u => {
   const changed = (u && u.uid) !== (user && user.uid) || (u && u.verified) !== (user && user.verified);
   user = u; userKnown = true;
   if (changed) {
     stopMine.forEach(f => f && f()); stopMine = []; myRequests = []; mySessions = [];
+    myPayments = []; access = null; links = {}; if (stopLinks) { stopLinks(); stopLinks = null; }
     if (u && u.verified) {
       stopMine.push(DB.watch("requests", l => { myRequests = l; if (!$("v-mine").hidden) drawMine(); }, ["uid", u.uid]));
       stopMine.push(DB.watch("sessions", l => { mySessions = l; if (!$("v-mine").hidden) drawMine(); }, ["uid", u.uid]));
+      stopMine.push(DB.watch("payments", l => { myPayments = l; rerender(); }, ["uid", u.uid]));
+      stopMine.push(DB.watch("access", l => {
+        access = l[0] || null;
+        if (accessActive(access) && !stopLinks) stopLinks = DB.watch("paperLinks", ls => { links = {}; ls.forEach(x => { links[x.id] = x.url; }); rerender(); });
+        rerender();
+      }, ["uid", u.uid]));
     }
   }
   route();

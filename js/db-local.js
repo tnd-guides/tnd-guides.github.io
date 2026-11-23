@@ -3,7 +3,7 @@
    Admin login in demo mode: any email + password "demo". */
 import { DEFAULT_GRADES } from "./common.js";
 
-const KEY = "guruhub_demo_v3";
+const KEY = "guruhub_demo_v4";
 const listeners = [];
 let userCb = [];
 
@@ -18,15 +18,21 @@ function exampleStore() {
     { id: t1, name: "Mrs. Dilrukshi Perera", about: "B.Sc. (Colombo), SLTS Grade 1", years: 12, mediums: ["Sinhala", "English"],
       bio: "Teaches O/L and A/L maths step by step, with lots of past paper practice.", photo: "",
       subjects: [g("O/Level") + "|Maths", g("Grade 10") + "|Maths", g("Grade 9") + "|Maths", g("A/L Maths") + "|Combined Maths"],
-      free: ["Mon-eve", "Wed-eve", "Sat-am"], rating: 4, reviews: 1, lessons: 1 },
+      free: ["Mon-eve", "Wed-eve", "Sat-am"], rating: 4, reviews: 1, lessons: 1,
+      district: "Kandy", areas: "Kandy town hall, Peradeniya",
+      classes: [{ type: "hall", fee: 1500, per: "month" }, { type: "group", fee: 2500, per: "month" }, { type: "online", fee: 2000, per: "month" }] },
     { id: t2, name: "Mr. Kasun Jayawardena", about: "B.Sc. Eng. (Moratuwa)", years: 6, mediums: ["Sinhala"],
       bio: "Makes physics simple with real-life examples.", photo: "",
       subjects: [g("A/L Maths") + "|Physics", g("A/L Science") + "|Physics", g("O/Level") + "|Science"],
-      free: ["Tue-eve", "Thu-eve", "Sat-pm"], rating: 0, reviews: 0, lessons: 0 },
+      free: ["Tue-eve", "Thu-eve", "Sat-pm"], rating: 0, reviews: 0, lessons: 0,
+      district: "Colombo", areas: "Maharagama, Nugegoda",
+      classes: [{ type: "group", fee: 3000, per: "month" }, { type: "individual", fee: 1500, per: "hour" }] },
     { id: t3, name: "Ms. Fathima Rizna", about: "B.A. English (Kelaniya)", years: 8, mediums: ["English", "Tamil"],
       bio: "Friendly English teacher for grammar, essays and speaking.", photo: "",
       subjects: ["Grade 6", "Grade 7", "Grade 8", "Grade 9", "Grade 10", "O/Level"].map(n => g(n) + "|English"),
-      free: ["Mon-pm", "Fri-pm", "Sat-am"], rating: 0, reviews: 0, lessons: 0 }
+      free: ["Mon-pm", "Fri-pm", "Sat-am"], rating: 0, reviews: 0, lessons: 0,
+      district: "Gampaha", areas: "Negombo",
+      classes: [{ type: "online", fee: 800, per: "class" }] }
   ];
   const teacherPrivate = [
     { id: t1, phone: "077 123 4412" }, { id: t2, phone: "071 555 0889" }, { id: t3, phone: "075 900 1230" }
@@ -34,7 +40,7 @@ function exampleStore() {
   const demoLink = "https://drive.google.com/";
   const paper = (grade, subject, kind, year, medium) => ({
     id: newId(), gradeId: g(grade), gradeName: grade, subject, kind, year, medium,
-    title: `${year} ${grade} ${subject}`, url: demoLink, made: ago(30, 9) });
+    title: `${year} ${grade} ${subject}`, free: false, made: ago(30, 9) });
   const papers = [
     paper("O/Level", "Maths", "past", 2024, "Sinhala"), paper("O/Level", "Maths", "scheme", 2024, "Sinhala"),
     paper("O/Level", "Maths", "past", 2023, "Sinhala"), paper("O/Level", "Maths", "scheme", 2023, "Sinhala"),
@@ -43,9 +49,13 @@ function exampleStore() {
     paper("A/L Maths", "Combined Maths", "past", 2024, "Sinhala"), paper("A/L Maths", "Combined Maths", "scheme", 2024, "Sinhala"),
     paper("A/L Maths", "Physics", "past", 2024, "Sinhala"), paper("Grade 8", "English", "school", 2025, "English")
   ];
+  papers[0].free = true; papers[0].url = demoLink;            // one free example
+  const paperLinks = papers.filter(p => !p.free).map(p => ({ id: p.id, url: demoLink }));
+  const settings = [{ id: "payment", price: "Rs. 500", period: "for 1 month",
+    howToPay: "Bank: Example Bank, Kandy branch\nAccount name: TND Guides\nAccount no: 0000 0000 00\n(Demo details only)" }];
   const p1 = newId(), p2 = newId();
   return {
-    grades, teachers, teacherPrivate, papers,
+    grades, teachers, teacherPrivate, papers, paperLinks, settings, access: [], payments: [], teacherApps: [],
     requests: [
       { id: newId(), uid: "demo-ashan", student: "Ashan", gradeId: g("A/L Maths"), gradeName: "A/L Maths", subject: "Combined Maths",
         need: "I don't understand integration by parts.", place: "Online", free: ["Mon-eve", "Sat-am"],

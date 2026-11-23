@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<!-- Google tag (Google Tag Manager container GTM-K823GGZ5) -->
+<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-K823GGZ5"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3b0b0b">
+<title>Teach with us · TND Guides</title>
+<meta name="description" content="Teachers: send a request to teach on TND Guides. Add your subjects, class types, fees and area.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;600;700;800&family=Noto+Sans+Tamil:wght@400;600;700;800&display=swap">
+<link rel="icon" type="image/svg+xml" href="img/logo.svg">
+<link rel="apple-touch-icon" href="img/logo.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="TND Guides home"><img class="logo-img" src="img/logo.svg" alt="" width="36" height="36"><span class="brand"><b>TND</b> Guides</span></a>
+    <nav class="topnav">
+      <a href="index.html">Home</a>
+      <a href="teachers.html">Teachers</a>
+      <a href="join.html" class="on">Teach with us</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <span class="tag">For teachers</span>
+    <h1>Teach with <span>TND Guides</span>.</h1>
+    <p>Tell us what you teach, where you hold classes and your fees. The admin checks your request and adds you to the site.</p>
+  </div>
+</section>
+
+<main class="wrap stack">
+  <div id="join-gate" class="card gate" hidden></div>
+  <div id="join-status" hidden></div>
+
+  <div id="join-form" class="stack" hidden>
+    <div class="card stack">
+      <h3 style="margin:0">About you</h3>
+      <label class="field" for="j-name">Full name<input id="j-name" maxlength="60" placeholder="e.g. Mr. Pradeep Silva" autocomplete="name"></label>
+      <div class="form-row">
+        <label class="field" for="j-about">Qualifications<input id="j-about" maxlength="80" placeholder="e.g. B.Sc. (Peradeniya), SLTS"></label>
+        <label class="field" for="j-years">Years teaching<input id="j-years" type="number" inputmode="numeric" min="0" max="60"></label>
+      </div>
+      <label class="field" for="j-phone">Phone number <span class="hint">(only the admin sees this)</span><input id="j-phone" maxlength="15" inputmode="tel" placeholder="07X XXX XXXX" autocomplete="tel"></label>
+      <label class="field" for="j-bio">A few words for students <span class="hint">(students see this)</span><textarea id="j-bio" maxlength="300" placeholder="e.g. I explain maths step by step with lots of past paper practice."></textarea></label>
+      <label class="field" for="j-photo">Photo link <span class="hint">(optional)</span><input id="j-photo" type="url" placeholder="https://…"></label>
+      <div class="field"><span>I teach in</span><div class="checks" id="j-mediums"></div></div>
+    </div>
+
+    <div class="card stack">
+      <h3 style="margin:0">Subjects you teach</h3>
+      <div class="form-row">
+        <label class="field" for="j-grade">Grade<select id="j-grade"></select></label>
+        <div class="field"><span>Subjects in this grade</span><div class="checks" id="j-subjects"></div></div>
+      </div>
+      <div class="small"><span class="muted">Chosen:</span> <span id="j-chosen"></span></div>
+    </div>
+
+    <div class="card stack">
+      <h3 style="margin:0">Where and how you teach</h3>
+      <div class="form-row">
+        <label class="field" for="j-district">District<select id="j-district"></select></label>
+        <label class="field" for="j-areas">Towns or class places<input id="j-areas" maxlength="120" placeholder="e.g. Kandy town hall, Peradeniya"></label>
+      </div>
+      <div class="field"><span>Class types and fees</span>
+        <span class="hint">Tick each type you teach and type the fee in rupees.</span>
+        <div id="j-classes"></div>
+      </div>
+    </div>
+
+    <div class="card stack">
+      <h3 style="margin:0">When are you free?</h3>
+      <div class="field"><span>Days</span><div class="checks" id="j-days"></div></div>
+      <div class="field"><span>Times</span><div class="checks" id="j-times"></div></div>
+    </div>
+
+    <div id="j-error"></div>
+    <button class="btn yellow big block" id="j-send">Send my request</button>
+  </div>
+</main>
+
+<footer><div class="wrap">Your phone number is only for the admin. Students never see it.</div></footer>
+
+<script type="module" src="js/join.js?v=6"></script>
+</body>
+</html>

@@ -192,4 +192,63 @@ export function accountChip(DB) {
   });
 }
 
+/* ---------- Teacher class types, fees and places ---------- */
+export const CLASS_TYPES = [
+  { id: "online", name: "Online class" },
+  { id: "group", name: "Group class" },
+  { id: "hall", name: "Hall class" },
+  { id: "individual", name: "Individual class" }
+];
+export const FEE_PER = [
+  { id: "month", name: "per month" },
+  { id: "class", name: "per class" },
+  { id: "hour", name: "per hour" }
+];
+export const DISTRICTS = ["Ampara", "Anuradhapura", "Badulla", "Batticaloa", "Colombo", "Galle", "Gampaha", "Hambantota",
+  "Jaffna", "Kalutara", "Kandy", "Kegalle", "Kilinochchi", "Kurunegala", "Mannar", "Matale", "Matara", "Monaragala",
+  "Mullaitivu", "Nuwara Eliya", "Polonnaruwa", "Puttalam", "Ratnapura", "Trincomalee", "Vavuniya"];
+
+/* "Rs. 2,500 / month" */
+export function feeText(c) {
+  if (!c || !c.fee) return "";
+  return "Rs. " + Number(c.fee).toLocaleString("en-US") + " / " + (c.per || "month");
+}
+/* Small chips showing each class type and its fee (used on teacher cards) */
+export function classChips(classes) {
+  return (classes || []).map(c => {
+    const t = CLASS_TYPES.find(x => x.id === c.type);
+    if (!t) return "";
+    return `<span class="fee-chip"><b>${safe(t.name)}</b>${c.fee ? `<span>${safe(feeText(c))}</span>` : ""}</span>`;
+  }).join("");
+}
+/* Form rows: tick a class type, type its fee, choose per month/class/hour.
+   prefix keeps ids unique when the form is used twice on one page. */
+export function classEditorHtml(prefix, classes) {
+  const has = id => (classes || []).find(c => c.type === id);
+  return CLASS_TYPES.map(t => {
+    const c = has(t.id) || {};
+    return `<div class="class-row">
+      <label class="class-tick"><input type="checkbox" id="${prefix}-on-${t.id}" ${has(t.id) ? "checked" : ""}> ${safe(t.name)}</label>
+      <label class="class-fee">Rs.<input id="${prefix}-fee-${t.id}" type="number" inputmode="numeric" min="0" step="50" value="${c.fee || ""}" placeholder="Fee" aria-label="${safe(t.name)} fee in rupees"></label>
+      <select id="${prefix}-per-${t.id}" aria-label="${safe(t.name)} fee period">${FEE_PER.map(f => `<option value="${f.id}" ${c.per === f.id ? "selected" : ""}>${f.name}</option>`).join("")}</select>
+    </div>`;
+  }).join("");
+}
+export function readClassEditor(prefix) {
+  return CLASS_TYPES.filter(t => { const el = document.getElementById(`${prefix}-on-${t.id}`); return el && el.checked; })
+    .map(t => ({ type: t.id, fee: Math.max(0, parseInt(document.getElementById(`${prefix}-fee-${t.id}`).value, 10) || 0),
+                 per: document.getElementById(`${prefix}-per-${t.id}`).value }));
+}
+export const districtOptions = (chosen) => `<option value="">Choose district</option>` +
+  DISTRICTS.map(d => `<option ${d === chosen ? "selected" : ""}>${d}</option>`).join("");
+
+/* Lowest fee, for "From Rs. …" */
+export function lowestFee(classes) {
+  const f = (classes || []).filter(c => c.fee).sort((a, b) => a.fee - b.fee)[0];
+  return f ? feeText(f) : "";
+}
+
+/* Paid papers: does this access record still allow papers? */
+export const accessActive = a => !!(a && a.untilMs && a.untilMs > Date.now());
+
 export { icon };

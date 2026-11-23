@@ -1,5 +1,5 @@
 /* TND Guides – login, create account, confirm email, forgot password */
-import DB, { LIVE } from "./db.js?v=5";
+import DB, { LIVE } from "./db.js?v=6";
 import { langSwitch, startTranslation } from "./i18n.js";
 import { $, safe, icon, initials, demoBanner, authMessage, safeNext } from "./common.js";
 
@@ -28,6 +28,7 @@ function decide(u) {
     return show("verify");
   }
   if (next) { location.replace(next); return; }
+  if (u.isAdmin && sessionStorage.getItem("tnd_just_logged_in")) { sessionStorage.removeItem("tnd_just_logged_in"); location.replace("admin.html"); return; }
   $("acc-avatar").textContent = initials(u.name);
   $("acc-name").textContent = u.name;
   $("acc-email").textContent = u.email;
@@ -59,7 +60,7 @@ $("pw-eye").addEventListener("click", () => {
 
 $("google").addEventListener("click", async () => {
   say("start-msg", ""); busy($("google"), true);
-  try { await DB.googleSignIn(); }
+  try { sessionStorage.setItem("tnd_just_logged_in", "1"); await DB.googleSignIn(); }
   catch (e) { say("start-msg", authMessage(e)); }
   busy($("google"), false);
 });
@@ -78,7 +79,7 @@ async function go() {
     try { await DB.signUp(name, email, pw); } catch (e) { say("start-msg", authMessage(e)); }
   } else {
     busy(btn, true, "Logging in…");
-    try { await DB.signIn(email, pw); } catch (e) { say("start-msg", authMessage(e)); }
+    try { sessionStorage.setItem("tnd_just_logged_in", "1"); await DB.signIn(email, pw); } catch (e) { say("start-msg", authMessage(e)); }
   }
   busy(btn, false, label);
 }

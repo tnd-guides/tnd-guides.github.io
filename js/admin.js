@@ -1,14 +1,16 @@
 /* TND Guides – admin page */
-import DB, { LIVE } from "./db.js?v=5";
+import DB, { LIVE } from "./db.js?v=6";
 import { SUBJECT_ICONS } from "./icons.js";
 import { $, safe, icon, shortId, byOrder, colorOf, starsHtml, niceDate, timeAgo, freeText, showToast, demoBanner,
          initials, subjectIcon, gradeLabel, cleanLink, teacherScore, findNextTime, authMessage,
+         classEditorHtml, readClassEditor, classChips, districtOptions, accessActive,
          COLORS, SECTIONS, DAYS, DAY_NAMES, TIMES, DEFAULT_GRADES, PAPER_KINDS, MEDIUMS } from "./common.js";
 
 demoBanner(LIVE);
 
 /* ---------- Live data ---------- */
 let grades = [], requests = [], sessions = [], teachers = [], phones = [], posts = [], papers = [];
+let payments = [], accessList = [], paperLinks = [], apps = [], paySettings = {};
 let tab = "requests", openRequest = null, editGradeId = null, armed = null, editTeacherId = null;
 let newGradeColor = 0, editColor = 0, newSubjectIcon = "book";
 const tForm = { subjects: new Set(), days: new Set(), times: new Set(), mediums: new Set() };
@@ -30,8 +32,14 @@ DB.onUser(user => {
   if (user && user.isAdmin) { $("login").hidden = true; $("app").hidden = false; $("logout").hidden = false; start(); }
   else {
     $("login").hidden = false; $("app").hidden = true; $("logout").hidden = true;
-    if (user && !user.verified) $("login-error").innerHTML = `<p class="msg bad">Confirm your email first. <a href="login.html?next=admin.html">Open the confirm page</a>.</p>`;
-    else if (user && user.email) $("login-error").innerHTML = `<p class="msg bad">${safe(user.email)} is not an admin account. <a href="#" id="switch-user">Log out</a> and use the admin email.${user.adminWhy ? `<br><small>Firebase says: ${safe(user.adminWhy)}</small>` : ""}</p>`;
+    if (user && !user.verified) $("login-error").innerHTML = `<div class="msg info">Please confirm your email first. <a href="login.html?next=admin.html">Open the confirm page</a></div>`;
+    else if (user && user.email) $("login-error").innerHTML = `<div class="notadmin">
+        <p style="margin:0"><b>${safe(user.email)}</b> is a student account, so it can't open the admin page.</p>
+        <a class="btn yellow block" href="index.html">Go to the student site</a>
+        <button type="button" class="btn block" id="switch-user">Log out and use an admin Gmail</button>
+        ${user.adminWhy && user.adminWhy !== "permission-denied" ? `<small class="hint">Firebase says: ${safe(user.adminWhy)}</small>` : ""}
+      </div>`;
+    else $("login-error").innerHTML = "";
   }
 });
 async function doLogin() {
@@ -41,7 +49,7 @@ async function doLogin() {
 }
 $("login-go").addEventListener("click", doLogin);
 $("password").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
-document.addEventListener("click", async e => { if (e.target.id === "switch-user") { e.preventDefault(); await DB.logout(); } });
+document.addEventListener("click", async e => { if (e.target.id === "switch-user") { e.preventDefault(); await DB.logout(); $("login-error").innerHTML = ""; } });
 $("logout").addEventListener("click", async e => { e.preventDefault(); await DB.logout(); location.reload(); });
 
 function start() {
@@ -55,6 +63,13 @@ function start() {
   DB.watch("teacherPrivate", l => { phones = l; drawAll(); }, null, err);
   DB.watch("posts", l => { posts = l; drawAll(); }, null, err);
   DB.watch("papers", l => { papers = l; drawAll(); }, null, err);
+  DB.watch("paperLinks", l => { paperLinks = l; drawAll(); }, null, err);
+  DB.watch("payments", l => { notifyNew("pay", l.filter(x => x.status === "pending"), x => `New payment: ${x.name} · Rs. ${x.amount}`); payments = l; drawAll(); }, null, err);
+  DB.watch("access", l => { accessList = l; drawAll(); }, null, err);
+  DB.watch("teacherApps", l => { notifyNew("join", l.filter(x => x.status === "pending"), x => `New teacher request: ${x.name}`); apps = l; drawAll(); }, null, err);
+  DB.watch("settings", l => { paySettings = l.find(x => x.id === "payment") || {}; fillPaySettings(); }, null, err);
+  $("t-district").innerHTML = districtOptions("");
+  $("t-classes").innerHTML = classEditorHtml("t", []);
   $("demo-tools").hidden = LIVE;
   $("notify-on").hidden = !("Notification" in window) || Notification.permission === "granted";
   ["g-section", "e-section"].forEach(id => { $(id).innerHTML = SECTIONS.map(s => `<option>${s}</option>`).join(""); });
@@ -122,13 +137,13 @@ $("notify-on").addEventListener("click", async () => {
 function showTab(name) {
   tab = name; armed = null;
   document.querySelectorAll("#tabs .tab").forEach(b => b.classList.toggle("on", b.dataset.tab === name));
-  ["requests", "lessons", "papers", "teachers", "cards", "forum"].forEach(t => { $("tab-" + t).hidden = t !== name; });
+  ["requests", "lessons", "papers", "payments", "teachers", "cards", "forum"].forEach(t => { $("tab-" + t).hidden = t !== name; });
   drawAll();
 }
 function drawAll() {
   if (!started) return;
   drawNumbers();
-  ({ requests: drawRequests, lessons: drawLessons, papers: drawPapers, teachers: drawTeachers, cards: drawCards, forum: drawForum })[tab]();
+  ({ requests: drawRequests, lessons: drawLessons, papers: drawPapers, payments: drawPayments, teachers: () => { drawJoins(); drawTeachers(); }, cards: drawCards, forum: drawForum })[tab]();
 }
 function drawNumbers() {
   const n = requests.filter(r => r.status === "new").length, w = requests.filter(r => r.status === "wait").length;
@@ -137,6 +152,9 @@ function drawNumbers() {
   $("numbers").innerHTML = box(n, "new requests", "var(--red)") + box(w, "choosing teacher", "var(--orange)") +
                            box(b, "lessons booked", "var(--blue)") + box(papers.length, "papers online", "var(--green)");
   $("c-requests").hidden = !(n + w); $("c-requests").textContent = n + w;
+  const pp = payments.filter(x => x.status === "pending").length, pj = apps.filter(x => x.status === "pending").length;
+  $("c-payments").hidden = !pp; $("c-payments").textContent = pp;
+  $("c-joins").hidden = !pj; $("c-joins").textContent = pj;
 }
 
 /* ================= Requests ================= */
@@ -199,6 +217,109 @@ async function book(requestId, teacherId) {
   } catch (e) { console.error(e); showToast("Could not book. Try again."); }
 }
 
+/* ================= New payment / teacher alerts ================= */
+const seen = {};
+function notifyNew(key, list, text) {
+  if (seen[key]) {
+    const fresh = list.filter(x => !seen[key].has(x.id));
+    if (fresh.length) {
+      beep(); showToast(text(fresh[0]));
+      try { if ("Notification" in window && Notification.permission === "granted") new Notification("TND Guides", { body: text(fresh[0]) }); } catch (e) { /* ignore */ }
+    }
+  }
+  seen[key] = new Set(list.map(x => x.id));
+}
+
+/* ================= Payments (unlock papers) ================= */
+const accessOf = uid => accessList.find(a => a.id === uid || a.uid === uid);
+const untilText = a => accessActive(a) ? "until " + niceDate(new Date(a.untilMs).toISOString()) : "locked";
+function fillPaySettings() {
+  const focused = document.activeElement && ["s-price", "s-period", "s-how"].includes(document.activeElement.id);
+  if (focused) return;
+  $("s-price").value = paySettings.price || ""; $("s-period").value = paySettings.period || ""; $("s-how").value = paySettings.howToPay || "";
+}
+$("s-save").addEventListener("click", async () => {
+  try {
+    await DB.set("settings", "payment", { price: $("s-price").value.trim(), period: $("s-period").value.trim(), howToPay: $("s-how").value.trim() });
+    showToast("Payment details saved. Students see them now.");
+  } catch (e) { console.error(e); showToast("Could not save. Try again."); }
+});
+async function giveAccess(uid, months, who) {
+  const cur = accessOf(uid), base = accessActive(cur) ? cur.untilMs : Date.now();
+  const d = new Date(base); d.setMonth(d.getMonth() + months);
+  const p = who || cur || {};
+  await DB.set("access", uid, { uid, email: p.email || "", name: p.name || "", untilMs: d.getTime(), updated: new Date().toISOString() });
+  showToast(`Papers unlocked until ${niceDate(d.toISOString())}.`);
+}
+async function approvePayment(id, months) {
+  const p = payments.find(x => x.id === id); if (!p) return;
+  try {
+    await giveAccess(p.uid, months, p);
+    await DB.update("payments", id, { status: "approved", months, decidedAt: new Date().toISOString() });
+  } catch (e) { console.error(e); showToast("Could not save. Try again."); }
+}
+function drawPayments() {
+  const pending = payments.filter(x => x.status === "pending").sort((a, b) => a.made.localeCompare(b.made));
+  $("pay-pending").innerHTML = pending.map(p => `<div class="item">
+      <div class="item-head"><h3 style="margin:0">Rs. ${safe(p.amount)} · ${safe(p.name)}</h3><span class="badge new">Check</span></div>
+      <div class="facts"><span>${safe(p.email)}</span><span>${safe(p.method)}</span><span>Ref <b>${safe(p.ref)}</b></span><span>${timeAgo(p.made)}</span></div>
+      ${p.note ? `<p style="margin:0">“${safe(p.note)}”</p>` : ""}
+      <div class="small muted">Now: ${untilText(accessOf(p.uid))}</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        <button class="btn sm yellow" data-approvepay="${p.id}|1">Unlock 1 month</button>
+        <button class="btn sm" data-approvepay="${p.id}|3">3 months</button>
+        <button class="btn sm" data-approvepay="${p.id}|12">1 year</button>
+      </div>
+      <button class="btn sm ${armed === "rp" + p.id ? "red" : ""}" data-rejectpay="${p.id}">${armed === "rp" + p.id ? "Sure? Money not received" : "Money not received"}</button>
+    </div>`).join("") || `<p class="msg good">No payments waiting.</p>`;
+  const active = accessList.filter(accessActive).sort((a, b) => a.untilMs - b.untilMs);
+  $("pay-active").innerHTML = active.map(a => `<div class="item">
+      <div class="item-head"><b>${safe(a.name || a.email || a.id)}</b><span class="badge done">${icon("unlock", 12)} ${untilText(a)}</span></div>
+      <div class="facts"><span>${safe(a.email)}</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="btn sm" data-extend="${a.id}">+1 month</button>
+        <button class="btn sm ${armed === "da" + a.id ? "red" : ""}" data-delaccess="${a.id}">${armed === "da" + a.id ? "Sure? Lock" : "Lock papers"}</button>
+      </div></div>`).join("") || `<p class="muted">Nobody has unlocked papers right now.</p>`;
+  const done = payments.filter(x => x.status !== "pending").sort((a, b) => b.made.localeCompare(a.made)).slice(0, 40);
+  $("pay-history").innerHTML = done.map(p => `<div class="facts"><span class="badge ${p.status === "approved" ? "done" : "new"}">${p.status === "approved" ? (p.months || "") + " mo" : "Not received"}</span><span>Rs. ${safe(p.amount)}</span><span>${safe(p.name)}</span><span>${safe(p.method)} · ${safe(p.ref)}</span><span>${timeAgo(p.made)}</span></div>`).join("") || `<p class="muted">Nothing yet.</p>`;
+  fillPaySettings();
+}
+
+/* ================= Teacher join requests ================= */
+function drawJoins() {
+  const pending = apps.filter(a => a.status === "pending").sort((a, b) => a.made.localeCompare(b.made));
+  if (!pending.length) { $("join-box").innerHTML = ""; return; }
+  $("join-box").innerHTML = `<div class="stack"><h3 style="margin:0">Teachers who want to join (${pending.length})</h3>${pending.map(a => `
+    <div class="tcard">
+      <div class="tcard-top">
+        ${a.photo ? `<img class="avatar" src="${safe(a.photo)}" alt="">` : `<span class="avatar">${safe(initials(a.name))}</span>`}
+        <div style="min-width:0"><h3>${safe(a.name)}</h3><div class="muted small">${safe(a.about)}${a.years ? " · " + safe(a.years) + " years" : ""}</div>
+          <div class="small">${icon("lock", 12)} ${safe(a.phone)} · ${safe(a.email)}</div></div>
+      </div>
+      ${a.bio ? `<p style="margin:0">${safe(a.bio)}</p>` : ""}
+      <div class="tag-list">${(a.subjects || []).map(k => { const [gid, sub] = k.split("|"); return `<span>${safe(sub)} · ${safe(gradeName(gid))}</span>`; }).join("")}</div>
+      <div class="fee-chips">${classChips(a.classes)}</div>
+      <div class="place">${icon("pin", 14)}<span>${safe([a.district, a.areas].filter(Boolean).join(" · "))}</span></div>
+      <div class="small muted">Free: ${(a.free || []).map(freeText).join(", ")} · Mediums: ${safe((a.mediums || []).join(", ") || "-")}</div>
+      <input id="jn-${a.id}" placeholder="Reason if you reject (optional, the teacher sees it)" aria-label="Reason for rejecting">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="btn yellow" data-approvejoin="${a.id}">${icon("check", 16)} Accept and add</button>
+        <button class="btn ${armed === "rj" + a.id ? "red" : ""}" data-rejectjoin="${a.id}">${armed === "rj" + a.id ? "Sure? Reject" : "Reject"}</button>
+      </div>
+    </div>`).join("")}</div>`;
+}
+async function approveJoin(id) {
+  const a = apps.find(x => x.id === id); if (!a) return;
+  try {
+    const tid = await DB.add("teachers", { name: a.name, about: a.about || "Teacher", years: a.years || 0, bio: a.bio || "", photo: a.photo || "",
+      mediums: a.mediums || [], subjects: a.subjects || [], free: a.free || [], district: a.district || "", areas: a.areas || "",
+      classes: a.classes || [], rating: 0, reviews: 0, lessons: 0, uid: a.uid });
+    await DB.set("teacherPrivate", tid, { phone: a.phone, email: a.email });
+    await DB.update("teacherApps", id, { status: "approved", teacherId: tid });
+    showToast(a.name + " is now on the Teachers page.");
+  } catch (e) { console.error(e); showToast("Could not save. Try again."); }
+}
+
 /* ================= Lessons ================= */
 function drawLessons() {
   const rows = sessions.slice().sort((a, b) => b.when.localeCompare(a.when));
@@ -239,10 +360,14 @@ $("p-add").addEventListener("click", async () => {
   else if (!url) problem = "Paste the PDF link. It must start with https://";
   if (problem) { $("p-error").innerHTML = `<p class="msg bad">${problem}</p>`; return; }
   try {
-    await DB.add("papers", { gradeId: g.id, gradeName: g.name, subject, kind: $("p-kind").value, year, medium: $("p-medium").value,
-      title: $("p-title").value.trim(), url, made: new Date().toISOString() });
+    const free = $("p-free").checked;
+    const meta = { gradeId: g.id, gradeName: g.name, subject, kind: $("p-kind").value, year, medium: $("p-medium").value,
+      title: $("p-title").value.trim(), free, made: new Date().toISOString() };
+    if (free) meta.url = url;
+    const id = await DB.add("papers", meta);
+    if (!free) await DB.set("paperLinks", id, { url });   // the link is hidden until the student pays
     $("p-url").value = ""; $("p-error").innerHTML = "";
-    showToast("Paper added. Students can see it now.");
+    showToast(free ? "Free paper added. Everyone can open it." : "Paper added. Students who paid can open it.");
   } catch (e) { console.error(e); showToast("Could not save. Try again."); }
 });
 function drawPapers() {
@@ -251,9 +376,10 @@ function drawPapers() {
   const list = papers.filter(p => g && p.gradeId === g.id && p.subject === subject).sort((a, b) => b.year - a.year);
   $("paper-admin-list").innerHTML = list.map(p => {
     const k = PAPER_KINDS.find(x => x.id === p.kind) || PAPER_KINDS[0];
+    const url = p.free ? p.url : ((paperLinks.find(x => x.id === p.id) || {}).url || p.url || "");
     return `<div class="paper">
       <span class="pi ${k.id}">${icon(k.icon, 22)}</span>
-      <a class="pt" href="${safe(p.url)}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><b>${safe(p.title || k.one)}</b><span>${k.one} · ${p.year} · ${safe(p.medium)}</span></a>
+      <a class="pt" href="${safe(url)}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><b>${safe(p.title || k.one)}</b><span>${k.one} · ${p.year} · ${safe(p.medium)} · <b style="color:${p.free ? "var(--green)" : "var(--orange)"}">${p.free ? "Free" : "Paid"}</b></span></a>
       <button class="btn sm ${armed === "pp" + p.id ? "red" : ""}" data-delpaper="${p.id}" aria-label="Remove paper">${armed === "pp" + p.id ? "Sure?" : icon("x", 16)}</button>
     </div>`;
   }).join("") || `<p class="muted">No papers yet for this subject.</p>`;
@@ -280,7 +406,8 @@ document.addEventListener("change", e => {
 });
 function resetTeacherForm() {
   editTeacherId = null;
-  ["t-name", "t-about", "t-years", "t-phone", "t-bio", "t-photo"].forEach(id => { $(id).value = ""; });
+  ["t-name", "t-about", "t-years", "t-phone", "t-bio", "t-photo", "t-areas"].forEach(id => { $(id).value = ""; });
+  $("t-district").innerHTML = districtOptions(""); $("t-classes").innerHTML = classEditorHtml("t", []);
   tForm.subjects.clear(); tForm.days.clear(); tForm.times.clear(); tForm.mediums.clear();
   document.querySelectorAll("[data-tday],[data-ttime],[data-tmed]").forEach(c => { c.checked = false; });
   $("t-form-title").textContent = "Add a teacher"; $("t-save").textContent = "Add teacher"; $("t-cancel").hidden = true;
@@ -291,6 +418,8 @@ function editTeacher(id) {
   editTeacherId = id;
   $("t-name").value = t.name; $("t-about").value = t.about || ""; $("t-years").value = t.years || "";
   $("t-phone").value = phoneOf(id); $("t-bio").value = t.bio || ""; $("t-photo").value = t.photo || "";
+  $("t-areas").value = t.areas || ""; $("t-district").innerHTML = districtOptions(t.district || "");
+  $("t-classes").innerHTML = classEditorHtml("t", t.classes || []);
   tForm.subjects = new Set(t.subjects || []);
   const days = new Set((t.free || []).map(f => f.split("-")[0])), times = new Set((t.free || []).map(f => f.split("-")[1]));
   tForm.days = days; tForm.times = times; tForm.mediums = new Set(t.mediums || []);
@@ -314,7 +443,8 @@ $("t-save").addEventListener("click", async () => {
   const free = [];
   tForm.days.forEach(d => tForm.times.forEach(t => free.push(d + "-" + t)));
   const pub = { name, about: $("t-about").value.trim() || "Teacher", years: parseInt($("t-years").value, 10) || 0,
-    bio: $("t-bio").value.trim(), photo, mediums: [...tForm.mediums], subjects: [...tForm.subjects], free };
+    bio: $("t-bio").value.trim(), photo, mediums: [...tForm.mediums], subjects: [...tForm.subjects], free,
+    district: $("t-district").value, areas: $("t-areas").value.trim(), classes: readClassEditor("t") };
   try {
     if (editTeacherId) {
       await DB.update("teachers", editTeacherId, pub);
@@ -338,6 +468,8 @@ function drawTeachers() {
       </div>
       <div class="tstats">${sc.reviews ? starsHtml(sc.avg, 14) + " " + sc.avg.toFixed(1) + ` (${sc.reviews})` : "No stars yet"}<span>${sc.lessons} lessons</span>${t.years ? `<span>${t.years} years</span>` : ""}</div>
       <div class="tag-list">${(t.subjects || []).map(k => { const [gid, s] = k.split("|"); return `<span>${safe(s)} · ${safe(gradeName(gid))}</span>`; }).join("")}</div>
+      ${(t.classes || []).length ? `<div class="fee-chips">${classChips(t.classes)}</div>` : `<div class="hint">No class types or fees yet. Press Change to add them.</div>`}
+      ${t.district || t.areas ? `<div class="place">${icon("pin", 14)}<span>${safe([t.district, t.areas].filter(Boolean).join(" · "))}</span></div>` : ""}
       <div class="small muted">Free: ${(t.free || []).map(freeText).join(", ")}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <button class="btn sm" data-editteacher="${t.id}">${icon("edit", 16)} Change</button>
@@ -466,7 +598,27 @@ document.addEventListener("click", async e => {
       if (requests.some(r => r.id === s.requestId)) await DB.update("requests", s.requestId, { status: "done" });
       return showToast("Marked finished. The student can now give stars.");
     }
-    if (d.delpaper) { if (confirmTwice("pp" + d.delpaper)) { await DB.remove("papers", d.delpaper); showToast("Paper removed."); } return; }
+    if (d.delpaper) {
+      if (confirmTwice("pp" + d.delpaper)) {
+        await DB.remove("papers", d.delpaper);
+        if (paperLinks.some(x => x.id === d.delpaper)) await DB.remove("paperLinks", d.delpaper);
+        showToast("Paper removed.");
+      }
+      return;
+    }
+    if (d.approvepay) { const [id, m] = d.approvepay.split("|"); return approvePayment(id, +m); }
+    if (d.rejectpay) { if (confirmTwice("rp" + d.rejectpay)) { await DB.update("payments", d.rejectpay, { status: "rejected", decidedAt: new Date().toISOString() }); showToast("Payment marked as not received."); } return; }
+    if (d.extend) return giveAccess(d.extend, 1);
+    if (d.delaccess) { if (confirmTwice("da" + d.delaccess)) { await DB.remove("access", d.delaccess); showToast("Papers locked again for this student."); } return; }
+    if (d.approvejoin) return approveJoin(d.approvejoin);
+    if (d.rejectjoin) {
+      if (confirmTwice("rj" + d.rejectjoin)) {
+        const note = (($("jn-" + d.rejectjoin) || {}).value || "").trim();
+        await DB.update("teacherApps", d.rejectjoin, { status: "rejected", adminNote: note });
+        showToast("Request rejected.");
+      }
+      return;
+    }
     if (d.editteacher) return editTeacher(d.editteacher);
     if (d.deltea) {
       if (confirmTwice("t" + d.deltea)) { await DB.remove("teachers", d.deltea); await DB.remove("teacherPrivate", d.deltea); if (editTeacherId === d.deltea) resetTeacherForm(); showToast("Teacher removed."); }

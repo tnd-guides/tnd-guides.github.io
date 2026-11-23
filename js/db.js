@@ -18,6 +18,12 @@
 */
 import { firebaseConfig } from "./config.js";
 
-export const LIVE = !!firebaseConfig.apiKey;
-const DB = LIVE ? await import("./db-firebase.js?v=5") : await import("./db-local.js?v=5");
+/* Add ?demo=1 to any page address to try the site with example data (saved only in this browser tab). */
+let demo = false;
+try {
+  if (new URLSearchParams(location.search).has("demo")) sessionStorage.setItem("tnd_demo", "1");
+  demo = sessionStorage.getItem("tnd_demo") === "1";
+} catch (e) { /* ignore */ }
+export const LIVE = !!firebaseConfig.apiKey && !demo;
+const DB = LIVE ? await import("./db-firebase.js?v=6") : await import("./db-local.js?v=6");
 export default DB;
