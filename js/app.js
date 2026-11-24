@@ -1,8 +1,8 @@
 /* TND Guides – student app
    Home (grade cards) → subject cards → subject page (papers + get a teacher) → request form */
-import DB, { LIVE } from "./db.js?v=6";
+import DB, { LIVE } from "./db.js?v=7";
 import { langSwitch, startTranslation } from "./i18n.js";
-import { $, safe, icon, shortId, byOrder, colorOf, starsHtml, niceDate, timeAgo, hasContactInfo, showToast,
+import { $, safe, safeUrl, icon, shortId, byOrder, colorOf, starsHtml, niceDate, timeAgo, hasContactInfo, showToast,
          demoBanner, bottomNav, subjectIcon, gradeLabel, accountChip, loginLink, accessActive, lowestFee, SECTIONS, DAYS, DAY_NAMES, TIMES, PAPER_KINDS, MEDIUMS } from "./common.js";
 
 demoBanner(LIVE);
@@ -137,7 +137,7 @@ function drawSubject(gid, i) {
           <span class="pt"><b>${safe(p.title || k.one)}</b><span>${k.one} · ${safe(p.medium)} medium</span></span>
           <span class="po lock">${icon("lock", 20)}</span>
         </a>`;
-        return `<a class="paper" href="${safe(url)}" target="_blank" rel="noopener">
+        return `<a class="paper" href="${safe(safeUrl(url))}" target="_blank" rel="noopener">
           <span class="pi ${k.id}">${icon(k.icon, 22)}</span>
           <span class="pt"><b>${safe(p.title || k.one)}</b><span>${k.one} · ${safe(p.medium)} medium${p.free ? " · Free" : ""}</span></span>
           <span class="po">${icon("external", 20)}</span>

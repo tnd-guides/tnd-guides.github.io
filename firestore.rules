@@ -5,113 +5,139 @@ rules_version = '2';
 // ADMINS: put your admin Gmail(s) in the list in isAdmin() below, in small letters,
 // each in 'single quotes', separated by commas. This list is the ONLY place admins are set,
 // and it stays private inside Firebase. Do not commit your real emails to GitHub.
+//
+// Anything not listed below is blocked for everyone.
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ---------- Who is asking ----------
     function signedIn() { return request.auth != null; }
     // Logged in AND email confirmed (Google accounts are confirmed automatically)
-    function verified() { return signedIn() && request.auth.token.email_verified == true; }
+    function verified() {
+      return signedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email is string;
+    }
     function isAdmin() {
       return verified()
         && request.auth.token.email.lower() in ['admin@example.com'];
     }
     function isOwner() { return signedIn() && resource.data.uid == request.auth.uid; }
+    function myEmail() { return request.auth.token.email.lower(); }
     // Student has paid and their time has not ended
     function hasAccess() {
       return signedIn()
         && exists(/databases/$(database)/documents/access/$(request.auth.uid))
         && get(/databases/$(database)/documents/access/$(request.auth.uid)).data.untilMs > request.time.toMillis();
     }
+
+    // ---------- Checks on what is being saved ----------
     function newData() { return request.resource.data; }
+    // Only these fields, and all of them
+    function exactly(fields) { return newData().keys().hasOnly(fields) && newData().keys().hasAll(fields); }
     function textOk(field, max) { return newData()[field] is string && newData()[field].size() <= max; }
-    // Blocks Sri Lankan mobile numbers and email addresses
+    function textReq(field, max) { return textOk(field, max) && newData()[field].size() > 0; }
+    function listOk(field, max) { return newData()[field] is list && newData()[field].size() <= max; }
+    function intOk(field, lo, hi) { return newData()[field] is int && newData()[field] >= lo && newData()[field] <= hi; }
+    // A web link must start with https:// (or be empty)
+    function linkOk(field) { return newData()[field] is string && newData()[field].size() <= 500 && (newData()[field] == '' || newData()[field].matches('https://.+')); }
+    // Blocks Sri Lankan mobile numbers and email addresses in public text
     function noContact(s) {
       return !s.matches('.*(\\+?94|0)\\s?7[0-9][\\s-]?[0-9]{3}[\\s-]?[0-9]{4}.*')
           && !s.matches('.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}.*');
     }
 
-    // Grade and subject cards: everyone can read, only admin can change
+    // ---------- Public lists, only admin can change ----------
     match /grades/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
-
-    // Teacher profiles: everyone can read, only admin can change
     match /teachers/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
-
-    // Teacher phone numbers: admin only
-    match /teacherPrivate/{id} {
-      allow read, write: if isAdmin();
-    }
-
-    // Papers and marking schemes: everyone sees the list, only admin can change
     match /papers/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
-
-    // Links to paid papers: only students who paid (and admins) can read them
-    match /paperLinks/{id} {
-      allow read: if isAdmin() || hasAccess();
-      allow write: if isAdmin();
-    }
-
-    // Price and "how to pay" text: everyone can read, only admin can change
     match /settings/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
+    // ---------- Admin only ----------
+    // Teacher phone numbers and emails
+    match /teacherPrivate/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // ---------- Paid papers ----------
+    // Links to paid papers: only students who paid (and admins) can read them
+    match /paperLinks/{id} {
+      allow read: if isAdmin() || hasAccess();
+      allow write: if isAdmin();
+    }
     // Who has unlocked papers, and until when: only admin can change
     match /access/{uid} {
       allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
       allow write: if isAdmin();
     }
-
     // Payment details a student sends; the admin checks and approves
     match /payments/{id} {
       allow read: if isAdmin() || isOwner();
       allow create: if verified()
+        && exactly(['uid', 'email', 'name', 'amount', 'method', 'ref', 'note', 'made', 'status'])
         && newData().uid == request.auth.uid
+        && newData().email == myEmail()
         && newData().status == 'pending'
-        && newData().amount is int && newData().amount > 0 && newData().amount < 1000000
-        && textOk('ref', 60) && textOk('note', 150) && textOk('method', 30);
+        && intOk('amount', 1, 999999)
+        && textOk('name', 80) && textReq('ref', 60) && textOk('note', 150) && textOk('method', 30) && textOk('made', 40)
+        && noContact(newData().note);
       allow update, delete: if isAdmin();
     }
 
-    // Teachers asking to join (phone number is only for the admin)
+    // ---------- Teachers asking to join (phone number is only for the admin) ----------
     match /teacherApps/{uid} {
       allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
       allow create, update: if isAdmin() || (
         verified()
         && request.auth.uid == uid
+        && exactly(['uid', 'email', 'name', 'phone', 'about', 'years', 'bio', 'photo', 'mediums', 'subjects',
+                    'district', 'areas', 'classes', 'free', 'made', 'status', 'adminNote'])
         && newData().uid == uid
+        && newData().email == myEmail()
         && newData().status == 'pending'
+        && newData().adminNote == ''
         && (resource == null || resource.data.status != 'approved')
-        && textOk('name', 60) && textOk('phone', 15) && textOk('bio', 300) && textOk('areas', 120)
-        && noContact(newData().name + ' ' + newData().bio + ' ' + newData().areas)
-        && newData().subjects is list && newData().subjects.size() <= 80
-        && newData().classes is list && newData().classes.size() <= 4
+        && textReq('name', 60) && newData().phone.matches('[+0-9 ()-]{9,15}')
+        && textOk('about', 80) && intOk('years', 0, 70) && textOk('bio', 300) && linkOk('photo')
+        && textOk('district', 40) && textOk('areas', 120) && textOk('made', 40)
+        && listOk('mediums', 3) && listOk('subjects', 80) && listOk('classes', 4) && listOk('free', 21)
+        && noContact(newData().name + ' ' + newData().about + ' ' + newData().bio + ' ' + newData().areas)
       );
       allow delete: if isAdmin();
     }
 
-    // Student requests: a student can create and read only their own
+    // ---------- Student requests for a teacher ----------
     match /requests/{id} {
       allow read: if isAdmin() || isOwner();
       allow create: if verified()
+        && exactly(['uid', 'student', 'gradeId', 'gradeName', 'subject', 'need', 'place', 'free', 'made', 'status',
+                    'teacherId', 'teacherName', 'when', 'preferTeacherId', 'preferTeacherName'])
         && newData().uid == request.auth.uid
         && newData().status == 'new'
-        && textOk('student', 40) && textOk('need', 400) && textOk('subject', 60)
+        && newData().teacherId == '' && newData().teacherName == '' && newData().when == ''
+        && newData().place in ['Online', 'At school']
+        && textReq('student', 40) && textReq('need', 400) && textReq('subject', 60)
+        && textOk('gradeId', 40) && textOk('gradeName', 40) && textOk('made', 40)
+        && textOk('preferTeacherId', 40) && textOk('preferTeacherName', 80)
+        && listOk('free', 21)
         && noContact(newData().student + ' ' + newData().need);
       allow update, delete: if isAdmin();
     }
 
-    // Lessons: made by admin; the student may only add stars once, after the lesson
+    // ---------- Lessons: made by admin; the student may add stars once, after the lesson ----------
     match /sessions/{id} {
       allow read: if isAdmin() || isOwner();
       allow create, delete: if isAdmin();
@@ -120,19 +146,20 @@ service cloud.firestore {
         && resource.data.status == 'done'
         && resource.data.stars == 0
         && newData().diff(resource.data).affectedKeys().hasOnly(['stars', 'comment'])
-        && newData().stars is int && newData().stars >= 1 && newData().stars <= 5
+        && intOk('stars', 1, 5)
         && textOk('comment', 200) && noContact(newData().comment)
       );
     }
 
-    // Forum
+    // ---------- Forum: anyone can post (guests get an invisible anonymous login) ----------
     match /posts/{id} {
       allow read: if true;
-      // anyone can post (guests get an invisible anonymous login)
       allow create: if signedIn()
+        && exactly(['uid', 'name', 'gradeId', 'gradeName', 'section', 'subject', 'title', 'text', 'made', 'answerCount'])
         && newData().uid == request.auth.uid
         && newData().answerCount == 0
-        && textOk('name', 40) && textOk('title', 160) && textOk('text', 800)
+        && textReq('name', 40) && textReq('title', 160) && textOk('text', 800)
+        && textOk('gradeId', 40) && textOk('gradeName', 40) && textOk('section', 20) && textOk('subject', 60) && textOk('made', 40)
         && noContact(newData().name + ' ' + newData().title + ' ' + newData().text);
       // anyone signed in may add 1 to the answer counter; admin may do anything
       allow update: if isAdmin() || (
@@ -145,9 +172,12 @@ service cloud.firestore {
       match /answers/{answerId} {
         allow read: if true;
         allow create: if signedIn()
+          && exists(/databases/$(database)/documents/posts/$(id))
+          && exactly(['uid', 'name', 'text', 'made', 'admin'])
           && newData().uid == request.auth.uid
+          && newData().admin is bool
           && (newData().admin == false || isAdmin())
-          && textOk('name', 40) && textOk('text', 800)
+          && textReq('name', 40) && textReq('text', 800) && textOk('made', 40)
           && noContact(newData().name + ' ' + newData().text);
         allow delete: if isAdmin();
       }

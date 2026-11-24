@@ -1,7 +1,7 @@
 /* TND Guides – public teacher profiles */
-import DB, { LIVE } from "./db.js?v=6";
+import DB, { LIVE } from "./db.js?v=7";
 import { langSwitch, startTranslation } from "./i18n.js";
-import { $, safe, icon, starsHtml, initials, demoBanner, bottomNav, accountChip, classChips, lowestFee, DISTRICTS, CLASS_TYPES, SECTIONS } from "./common.js";
+import { $, safe, safeUrl, icon, starsHtml, initials, demoBanner, bottomNav, accountChip, classChips, lowestFee, DISTRICTS, CLASS_TYPES, SECTIONS } from "./common.js";
 
 demoBanner(LIVE);
 bottomNav("teachers");
@@ -41,7 +41,7 @@ function draw() {
   $("list").innerHTML = list.map(({ t, links }) => `
     <article class="tcard">
       <div class="tcard-top">
-        ${t.photo ? `<img class="avatar" src="${safe(t.photo)}" alt="" loading="lazy">` : `<span class="avatar">${safe(initials(t.name))}</span>`}
+        ${t.photo ? `<img class="avatar" src="${safe(safeUrl(t.photo))}" alt="" loading="lazy">` : `<span class="avatar">${safe(initials(t.name))}</span>`}
         <div style="min-width:0">
           <h3>${safe(t.name)}</h3>
           <div class="muted small">${safe(t.about)}</div>

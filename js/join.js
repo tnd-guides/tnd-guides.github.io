@@ -1,5 +1,5 @@
 /* TND Guides – teacher join request ("Teach with us") */
-import DB, { LIVE } from "./db.js?v=6";
+import DB, { LIVE } from "./db.js?v=7";
 import { langSwitch, startTranslation } from "./i18n.js";
 import { $, safe, byOrder, cleanLink, showToast, demoBanner, bottomNav, accountChip, loginLink, timeAgo,
          classEditorHtml, readClassEditor, classChips, districtOptions, DAYS, DAY_NAMES, TIMES, MEDIUMS } from "./common.js";

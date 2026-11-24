@@ -85,6 +85,9 @@ export function hasContactInfo(text) {
          /\b(whats\s?app|viber|telegram|imo|call me|my number)\b/i.test(text);
 }
 
+/* Only https links are used in pages (blocks javascript: and other tricks) */
+export const safeUrl = u => (/^https:\/\/[^\s"'<>]+$/i.test(String(u || "")) ? String(u) : "#");
+
 /* Accepts a Google Drive (or any https) link */
 export function cleanLink(url) {
   url = String(url || "").trim();

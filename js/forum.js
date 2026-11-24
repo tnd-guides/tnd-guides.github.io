@@ -1,5 +1,5 @@
 /* TND Guides – forum page */
-import DB, { LIVE } from "./db.js?v=6";
+import DB, { LIVE } from "./db.js?v=7";
 import { langSwitch, startTranslation } from "./i18n.js";
 import { $, safe, byOrder, timeAgo, hasContactInfo, showToast, demoBanner, bottomNav, icon, accountChip, SECTIONS } from "./common.js";
 
@@ -10,6 +10,11 @@ accountChip(DB);
 startTranslation();
 /* Anyone can post. Logged-in users post with their account, others as an invisible guest. */
 const myUid = async () => (user ? user.uid : DB.guest());
+/* Wait 30 seconds between posts from the same device */
+function tooSoon() {
+  try { const t = +localStorage.getItem("tnd_last_post") || 0; return Date.now() - t < 30000; } catch (e) { return false; }
+}
+function markPosted() { try { localStorage.setItem("tnd_last_post", String(Date.now())); } catch (e) { /* ignore */ } }
 
 let grades = [], posts = [], user = null, filter = "all";
 const answers = {};          // postId → list of answers
@@ -76,10 +81,12 @@ $("post").addEventListener("click", async () => {
   else if (hasContactInfo(name + " " + title + " " + text)) problem = "Please remove phone numbers, emails or app names. Posts must stay inside TND Guides.";
   if (problem) { $("ask-error").innerHTML = `<p class="msg bad">${problem}</p>`; return; }
   try {
+    if (tooSoon()) { $("ask-error").innerHTML = `<p class="msg bad">Please wait a moment before posting again.</p>`; return; }
     const uid = await myUid();
     await DB.add("posts", { uid, name, gradeId: g.id, gradeName: g.name, section: g.section || "Other", subject: $("q-subject").value,
       title, text, made: new Date().toISOString(), answerCount: 0 });
     $("ask-box").hidden = true; $("q-title").value = ""; $("q-text").value = ""; $("ask-error").innerHTML = "";
+    markPosted();
     showToast("Your question is posted!");
   } catch (e) { console.error(e); $("ask-error").innerHTML = `<p class="msg bad">Could not post. Check your internet and try again.</p>`; }
 });
@@ -106,10 +113,12 @@ document.addEventListener("click", async e => {
     else if (hasContactInfo(name + " " + text)) problem = "Please remove phone numbers, emails or app names.";
     if (problem) { $("ae-" + id).innerHTML = `<p class="msg bad">${problem}</p>`; return; }
     try {
+      if (tooSoon()) { $("ae-" + id).innerHTML = `<p class="msg bad">Please wait a moment before posting again.</p>`; return; }
       const uid = await myUid();
       const p = posts.find(x => x.id === id);
       await DB.add("posts/" + id + "/answers", { uid, name, text, made: new Date().toISOString(), admin: false });
       await DB.update("posts", id, { answerCount: (p.answerCount || 0) + 1 });
+      markPosted();
       showToast("Thanks for helping!");
     } catch (er) { console.error(er); $("ae-" + id).innerHTML = `<p class="msg bad">Could not post. Try again.</p>`; }
   }

@@ -1,5 +1,5 @@
 /* TND Guides – login, create account, confirm email, forgot password */
-import DB, { LIVE } from "./db.js?v=6";
+import DB, { LIVE } from "./db.js?v=7";
 import { langSwitch, startTranslation } from "./i18n.js";
 import { $, safe, icon, initials, demoBanner, authMessage, safeNext } from "./common.js";
 
@@ -73,7 +73,7 @@ async function go() {
   if (mode === "signup") {
     const name = $("su-name").value.trim();
     if (!name) return say("start-msg", "Please type your name.");
-    if (pw.length < 6) return say("start-msg", "The password needs at least 6 letters or numbers.");
+    if (pw.length < 8 || !/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)) return say("start-msg", "Use at least 8 characters, with letters and numbers.");
     if (pw !== $("password2").value) return say("start-msg", "The two passwords are not the same.");
     busy(btn, true, "Creating…");
     try { await DB.signUp(name, email, pw); } catch (e) { say("start-msg", authMessage(e)); }

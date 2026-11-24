@@ -1,7 +1,7 @@
 /* TND Guides – admin page */
-import DB, { LIVE } from "./db.js?v=6";
+import DB, { LIVE } from "./db.js?v=7";
 import { SUBJECT_ICONS } from "./icons.js";
-import { $, safe, icon, shortId, byOrder, colorOf, starsHtml, niceDate, timeAgo, freeText, showToast, demoBanner,
+import { $, safe, safeUrl, icon, shortId, byOrder, colorOf, starsHtml, niceDate, timeAgo, freeText, showToast, demoBanner,
          initials, subjectIcon, gradeLabel, cleanLink, teacherScore, findNextTime, authMessage,
          classEditorHtml, readClassEditor, classChips, districtOptions, accessActive,
          COLORS, SECTIONS, DAYS, DAY_NAMES, TIMES, DEFAULT_GRADES, PAPER_KINDS, MEDIUMS } from "./common.js";
@@ -52,9 +52,18 @@ $("password").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(
 document.addEventListener("click", async e => { if (e.target.id === "switch-user") { e.preventDefault(); await DB.logout(); $("login-error").innerHTML = ""; } });
 $("logout").addEventListener("click", async e => { e.preventDefault(); await DB.logout(); location.reload(); });
 
+/* Log the admin out after 60 minutes with no taps or typing (shared or lost phones) */
+let idleTimer = null;
+function resetIdle() {
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(async () => { await DB.logout(); location.reload(); }, 60 * 60 * 1000);
+}
+["click", "keydown", "touchstart", "scroll"].forEach(ev => window.addEventListener(ev, () => { if (started) resetIdle(); }, { passive: true }));
+
 function start() {
   if (started) return;
   started = true;
+  resetIdle();
   const err = () => showToast("Could not load data. Check the Firebase rules and admin email.");
   DB.watch("grades", l => { grades = l; fillSelects(); drawAll(); }, null, err);
   DB.watch("requests", l => { requests = l; checkAlerts(); drawAll(); }, null, err);
@@ -292,7 +301,7 @@ function drawJoins() {
   $("join-box").innerHTML = `<div class="stack"><h3 style="margin:0">Teachers who want to join (${pending.length})</h3>${pending.map(a => `
     <div class="tcard">
       <div class="tcard-top">
-        ${a.photo ? `<img class="avatar" src="${safe(a.photo)}" alt="">` : `<span class="avatar">${safe(initials(a.name))}</span>`}
+        ${a.photo ? `<img class="avatar" src="${safe(safeUrl(a.photo))}" alt="">` : `<span class="avatar">${safe(initials(a.name))}</span>`}
         <div style="min-width:0"><h3>${safe(a.name)}</h3><div class="muted small">${safe(a.about)}${a.years ? " · " + safe(a.years) + " years" : ""}</div>
           <div class="small">${icon("lock", 12)} ${safe(a.phone)} · ${safe(a.email)}</div></div>
       </div>
@@ -379,7 +388,7 @@ function drawPapers() {
     const url = p.free ? p.url : ((paperLinks.find(x => x.id === p.id) || {}).url || p.url || "");
     return `<div class="paper">
       <span class="pi ${k.id}">${icon(k.icon, 22)}</span>
-      <a class="pt" href="${safe(url)}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><b>${safe(p.title || k.one)}</b><span>${k.one} · ${p.year} · ${safe(p.medium)} · <b style="color:${p.free ? "var(--green)" : "var(--orange)"}">${p.free ? "Free" : "Paid"}</b></span></a>
+      <a class="pt" href="${safe(safeUrl(url))}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><b>${safe(p.title || k.one)}</b><span>${k.one} · ${p.year} · ${safe(p.medium)} · <b style="color:${p.free ? "var(--green)" : "var(--orange)"}">${p.free ? "Free" : "Paid"}</b></span></a>
       <button class="btn sm ${armed === "pp" + p.id ? "red" : ""}" data-delpaper="${p.id}" aria-label="Remove paper">${armed === "pp" + p.id ? "Sure?" : icon("x", 16)}</button>
     </div>`;
   }).join("") || `<p class="muted">No papers yet for this subject.</p>`;
@@ -463,7 +472,7 @@ function drawTeachers() {
     const sc = teacherScore(sessions, t.id);
     return `<div class="tcard">
       <div class="tcard-top">
-        ${t.photo ? `<img class="avatar" src="${safe(t.photo)}" alt="">` : `<span class="avatar">${safe(initials(t.name))}</span>`}
+        ${t.photo ? `<img class="avatar" src="${safe(safeUrl(t.photo))}" alt="">` : `<span class="avatar">${safe(initials(t.name))}</span>`}
         <div style="min-width:0"><h3>${safe(t.name)}</h3><div class="muted small">${safe(t.about)}</div><div class="small">${icon("lock", 12)} ${safe(phoneOf(t.id)) || "no phone"}</div></div>
       </div>
       <div class="tstats">${sc.reviews ? starsHtml(sc.avg, 14) + " " + sc.avg.toFixed(1) + ` (${sc.reviews})` : "No stars yet"}<span>${sc.lessons} lessons</span>${t.years ? `<span>${t.years} years</span>` : ""}</div>

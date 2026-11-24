@@ -11,6 +11,7 @@ A tutoring and past-paper website for Sri Lankan students, built for mobile firs
 | Guide | What it covers |
 |---|---|
 | [**SETUP.md**](SETUP.md) | Publish for free, step by step: GitHub Pages + Firebase, first use, changing the site later |
+| [**SECURITY.md**](SECURITY.md) | What keeps the site safe, and 5 settings to turn on in Firebase and Google |
 | [**ADMINS.md**](ADMINS.md) | Add or remove an admin, step by step (admins are set privately in Firebase, never on GitHub) |
 
 ## Pages
