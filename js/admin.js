@@ -1,9 +1,10 @@
 /* TND Guides – admin page */
-import DB, { LIVE } from "./db.js?v=7";
+import DB, { LIVE } from "./db.js?v=8";
 import { SUBJECT_ICONS } from "./icons.js";
+import { firebaseConfig } from "./config.js";
 import { $, safe, safeUrl, icon, shortId, byOrder, colorOf, starsHtml, niceDate, timeAgo, freeText, showToast, demoBanner,
          initials, subjectIcon, gradeLabel, cleanLink, teacherScore, findNextTime, authMessage,
-         classEditorHtml, readClassEditor, classChips, districtOptions, accessActive,
+         classEditorHtml, readClassEditor, classChips, districtOptions, accessActive, placeText, placeTypeId,
          COLORS, SECTIONS, DAYS, DAY_NAMES, TIMES, DEFAULT_GRADES, PAPER_KINDS, MEDIUMS } from "./common.js";
 
 demoBanner(LIVE);
@@ -28,7 +29,9 @@ $("admin-google").addEventListener("click", async () => {
   try { await DB.googleSignIn(); }
   catch (e) { $("login-error").innerHTML = `<p class="msg bad">${safe(authMessage(e))}</p>`; }
 });
+let me = null;
 DB.onUser(user => {
+  me = user;
   if (user && user.isAdmin) { $("login").hidden = true; $("app").hidden = false; $("logout").hidden = false; start(); }
   else {
     $("login").hidden = false; $("app").hidden = true; $("logout").hidden = true;
@@ -65,6 +68,8 @@ function start() {
   started = true;
   resetIdle();
   const err = () => showToast("Could not load data. Check the Firebase rules and admin email.");
+  /* These parts only work with the newest rules. If Firebase says no, the rules are old. */
+  const needNew = e => { if (e && e.code === "permission-denied") rulesOutOfDate(); else err(); };
   DB.watch("grades", l => { grades = l; fillSelects(); drawAll(); }, null, err);
   DB.watch("requests", l => { requests = l; checkAlerts(); drawAll(); }, null, err);
   DB.watch("sessions", l => { sessions = l; syncRatings(); drawAll(); }, null, err);
@@ -72,11 +77,12 @@ function start() {
   DB.watch("teacherPrivate", l => { phones = l; drawAll(); }, null, err);
   DB.watch("posts", l => { posts = l; drawAll(); }, null, err);
   DB.watch("papers", l => { papers = l; drawAll(); }, null, err);
-  DB.watch("paperLinks", l => { paperLinks = l; drawAll(); }, null, err);
-  DB.watch("payments", l => { notifyNew("pay", l.filter(x => x.status === "pending"), x => `New payment: ${x.name} · Rs. ${x.amount}`); payments = l; drawAll(); }, null, err);
-  DB.watch("access", l => { accessList = l; drawAll(); }, null, err);
-  DB.watch("teacherApps", l => { notifyNew("join", l.filter(x => x.status === "pending"), x => `New teacher request: ${x.name}`); apps = l; drawAll(); }, null, err);
-  DB.watch("settings", l => { paySettings = l.find(x => x.id === "payment") || {}; fillPaySettings(); }, null, err);
+  DB.watch("paperLinks", l => { paperLinks = l; drawAll(); }, null, needNew);
+  DB.watch("payments", l => { notifyNew("pay", l.filter(x => x.status === "pending"), x => `New payment: ${x.name} · Rs. ${x.amount}`); payments = l; drawAll(); }, null, needNew);
+  DB.watch("access", l => { accessList = l; drawAll(); }, null, needNew);
+  DB.watch("teacherApps", l => { notifyNew("join", l.filter(x => x.status === "pending"), x => `New teacher request: ${x.name}`); apps = l; drawAll(); }, null, needNew);
+  DB.watch("settings", l => { paySettings = l.find(x => x.id === "payment") || {}; fillPaySettings(); }, null, needNew);
+  drawRulesTool();
   $("t-district").innerHTML = districtOptions("");
   $("t-classes").innerHTML = classEditorHtml("t", []);
   $("demo-tools").hidden = LIVE;
@@ -175,7 +181,7 @@ function requestCard(r) {
   const isOpen = r.status === "new" || r.status === "wait";
   return `<div class="item">
     <div class="item-head"><h3 style="margin:0">${safe(r.student)} · ${safe(r.subject)}</h3><span class="badge ${cls}">${label}</span></div>
-    <div class="facts"><span>${safe(r.gradeName)}</span><span>No. <b>${shortId(r.id)}</b></span><span>${safe(r.place)}</span><span>${timeAgo(r.made)}</span></div>
+    <div class="facts"><span>${safe(r.gradeName)}</span><span>No. <b>${shortId(r.id)}</b></span><span>${safe(placeText(r.place))}${r.district ? " · " + safe(r.district) : ""}</span><span>${timeAgo(r.made)}</span></div>
     <p style="margin:0">“${safe(r.need)}”</p>
     <div class="facts"><span>Free: ${(r.free || []).map(freeText).join(", ")}</span></div>
     ${r.preferTeacherName ? `<div class="facts"><span>Asked for: <b style="color:var(--ink)">${safe(r.preferTeacherName)}</b></span></div>` : ""}
@@ -195,13 +201,17 @@ function teacherOptions(r) {
     const same = !exact && subs.some(x => x.split("|")[1] === r.subject);
     if (!exact && !same) return null;
     const score = teacherScore(sessions, t.id), shared = (r.free || []).filter(f => (t.free || []).includes(f));
-    return { t, exact, score, shared, next: findNextTime(r, t, sessions), wanted: t.id === r.preferTeacherId };
-  }).filter(Boolean).sort((a, b) => (b.wanted - a.wanted) || (b.exact - a.exact) || ((b.next ? 1 : 0) - (a.next ? 1 : 0)) || (b.score.avg - a.score.avg));
+    const want = placeTypeId(r.place);
+    const offers = !want || !(t.classes || []).length || (t.classes || []).some(c => c.type === want);
+    const near = !r.district || !t.district || t.district === r.district || want === "online";
+    return { t, exact, score, shared, offers, near, next: findNextTime(r, t, sessions), wanted: t.id === r.preferTeacherId };
+  }).filter(Boolean).sort((a, b) => (b.wanted - a.wanted) || (b.exact - a.exact) || (b.offers - a.offers) || (b.near - a.near) || ((b.next ? 1 : 0) - (a.next ? 1 : 0)) || (b.score.avg - a.score.avg));
   if (!list.length) return `<p class="msg bad">No teacher teaches ${safe(r.subject)} yet. Add one in Teachers.</p>`;
   return `<div class="stack">${list.map(o => `
     <div class="card" style="background:var(--bg);padding:14px;display:grid;gap:6px">
       <div class="item-head"><b>${safe(o.t.name)}</b>
         <span>${o.wanted ? '<span class="badge booked">Student asked</span> ' : ""}<span class="badge ${o.exact ? "done" : "wait"}">${o.exact ? "This grade" : "Other grade"}</span></span></div>
+      <div class="facts"><span class="badge ${o.offers ? "done" : "new"}">${o.offers ? "Offers " + safe(placeText(r.place)) : "No " + safe(placeText(r.place))}</span>${r.district ? `<span class="badge ${o.near ? "done" : "wait"}">${o.near ? "Same area" : safe(o.t.district || "Other area")}</span>` : ""}</div>
       <div class="facts"><span>${o.score.reviews ? starsHtml(o.score.avg, 14) + " " + o.score.avg.toFixed(1) : "no stars yet"}</span><span>${o.score.lessons} lessons</span><span>${o.shared.length} free times match</span></div>
       <div class="small">${o.next ? `First free time for both: <b>${niceDate(o.next)}</b>` : `<span style="color:var(--red)">No shared free time in 3 weeks</span>`}</div>
       <button class="btn red" data-book="${r.id}|${o.t.id}" ${o.next ? "" : "disabled"}>Book</button>
@@ -225,6 +235,60 @@ async function book(requestId, teacherId) {
     showToast(`Booked ${t.name} for ${r.student}, ${niceDate(when)}. Call the teacher: ${phoneOf(t.id)}`);
   } catch (e) { console.error(e); showToast("Could not book. Try again."); }
 }
+
+/* ================= Firebase rules helper ================= */
+let rulesOld = false;
+const rulesPage = () => `https://console.firebase.google.com/project/${encodeURIComponent(firebaseConfig.projectId || "")}/firestore/rules`;
+function savedAdmins() {
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem("tnd_admin_emails") || "[]"); } catch (e) { list = []; }
+  if (me && me.email && !list.includes(me.email)) list.unshift(me.email);
+  return list;
+}
+function drawRulesTool() {
+  $("rules-tool").innerHTML = `
+    <p class="muted" style="margin:0">Firebase only does what its rules allow. After a site update, or to add or remove an admin, copy the rules here and paste them into Firebase.</p>
+    <label class="field" for="rules-emails">Admin Gmails <span class="hint">(one per line, small letters)</span>
+      <textarea id="rules-emails" rows="3" spellcheck="false">${safe(savedAdmins().join("\n"))}</textarea></label>
+    <button class="btn yellow block" id="rules-copy">${icon("clipboard", 18)} Copy rules</button>
+    <div id="rules-out"></div>
+    <ol class="steps">
+      <li>Tap <b>Copy rules</b> above.</li>
+      <li>Open <a href="${rulesPage()}" target="_blank" rel="noopener">your Firebase rules page</a> (log in with the Gmail that owns Firebase).</li>
+      <li>Select everything in the big box, delete it, and paste.</li>
+      <li>Tap <b>Publish</b>. Wait 1 minute, then refresh this page.</li>
+    </ol>`;
+}
+function rulesOutOfDate() {
+  if (rulesOld) return;
+  rulesOld = true;
+  $("rules-banner").hidden = false;
+  $("rules-banner").innerHTML = `<div class="rules-alert">
+    <b>${icon("shield", 18)} Your Firebase rules are old.</b>
+    <span>Payments, teacher join requests and paid papers won't work until you update them. It takes 1 minute.</span>
+    <button class="btn yellow block" id="rules-open">Show me how</button>
+  </div>`;
+}
+async function copyRules() {
+  const emails = $("rules-emails").value.split(/[\s,;]+/).map(x => x.trim().toLowerCase()).filter(x => /^[^@\s'"]+@[^@\s'"]+\.[a-z]{2,}$/.test(x));
+  if (!emails.length) { $("rules-out").innerHTML = `<p class="msg bad">Type at least one admin Gmail.</p>`; return; }
+  try { localStorage.setItem("tnd_admin_emails", JSON.stringify(emails)); } catch (e) { /* ignore */ }
+  let text = "";
+  try { text = await fetch("firestore.rules?x=" + Date.now(), { cache: "no-store" }).then(r => r.text()); }
+  catch (e) { $("rules-out").innerHTML = `<p class="msg bad">Could not load the rules. Check your internet.</p>`; return; }
+  text = text.replace("in ['admin@example.com']", "in [" + emails.map(e => `'${e}'`).join(", ") + "]");
+  let copied = false;
+  try { await navigator.clipboard.writeText(text); copied = true; } catch (e) { copied = false; }
+  $("rules-out").innerHTML = copied
+    ? `<p class="msg good">Copied! Now open the Firebase rules page and paste.</p>`
+    : `<p class="msg info">Your browser didn't allow copying. Select all the text below and copy it.</p><textarea rows="8" readonly id="rules-text">${safe(text)}</textarea>`;
+  if (!copied) { const t = $("rules-text"); t.focus(); t.select(); }
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.id === "rules-copy") copyRules();
+  if (b.id === "rules-open") { $("rules-card").open = true; $("rules-card").scrollIntoView({ behavior: "smooth" }); }
+});
 
 /* ================= New payment / teacher alerts ================= */
 const seen = {};

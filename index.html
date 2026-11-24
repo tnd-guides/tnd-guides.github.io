@@ -99,10 +99,11 @@
       </label>
     </div>
     <div class="card stack">
-      <h3>Where do you want the lesson?</h3>
-      <div class="choices" id="places">
-        <button type="button" class="choice on" data-place="Online">Online<small>phone or computer</small></button>
-        <button type="button" class="choice" data-place="At school">At school<small>in a classroom</small></button>
+      <h3>What kind of class do you want?</h3>
+      <div class="choices" id="places"></div>
+      <label class="field" for="r-district" id="r-district-row" hidden>Your district <span class="hint">(to find a class near you)</span>
+        <select id="r-district"></select>
+      </label>
       </div>
     </div>
     <div class="card stack">
@@ -149,6 +150,6 @@
 
 <footer><div class="wrap">TND Guides · Never share your phone number. The admin talks to the teacher for you. · <a href="join.html">Teach with us</a> · <a href="admin.html">Admin</a></div></footer>
 
-<script type="module" src="js/app.js?v=7"></script>
+<script type="module" src="js/app.js?v=8"></script>
 </body>
 </html>

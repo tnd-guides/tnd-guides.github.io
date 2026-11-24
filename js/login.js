@@ -1,5 +1,5 @@
 /* TND Guides – login, create account, confirm email, forgot password */
-import DB, { LIVE } from "./db.js?v=7";
+import DB, { LIVE } from "./db.js?v=8";
 import { langSwitch, startTranslation } from "./i18n.js";
 import { $, safe, icon, initials, demoBanner, authMessage, safeNext } from "./common.js";
 

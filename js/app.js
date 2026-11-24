@@ -1,9 +1,9 @@
 /* TND Guides – student app
    Home (grade cards) → subject cards → subject page (papers + get a teacher) → request form */
-import DB, { LIVE } from "./db.js?v=7";
+import DB, { LIVE } from "./db.js?v=8";
 import { langSwitch, startTranslation } from "./i18n.js";
 import { $, safe, safeUrl, icon, shortId, byOrder, colorOf, starsHtml, niceDate, timeAgo, hasContactInfo, showToast,
-         demoBanner, bottomNav, subjectIcon, gradeLabel, accountChip, loginLink, accessActive, lowestFee, SECTIONS, DAYS, DAY_NAMES, TIMES, PAPER_KINDS, MEDIUMS } from "./common.js";
+         demoBanner, bottomNav, subjectIcon, gradeLabel, accountChip, loginLink, accessActive, lowestFee, CLASS_TYPES, districtOptions, placeText, SECTIONS, DAYS, DAY_NAMES, TIMES, PAPER_KINDS, MEDIUMS } from "./common.js";
 
 demoBanner(LIVE);
 bottomNav(location.hash === "#mine" ? "mine" : "home");
@@ -23,7 +23,12 @@ function gateHtml(what) {
   return `<h3 style="margin:0">Confirm your email</h3><p class="muted" style="margin:0">We sent a link to <b>${safe(user.email)}</b>. Open it to ${what}.</p>
     <a class="btn yellow block" href="${loginLink(here())}">I confirmed it / send again</a>`;
 }
-const pick = { place: "Online", days: new Set(), times: new Set() };
+const pick = { place: "Online class", days: new Set(), times: new Set() };
+const PLACE_HINTS = { online: "on a phone or computer", group: "a small group at a class", hall: "a big class in a hall", individual: "one-to-one with the teacher", home: "the teacher comes to your home" };
+function drawPlaces() {
+  $("places").innerHTML = CLASS_TYPES.map(t => `<button type="button" class="choice ${pick.place === t.name ? "on" : ""}" data-place="${t.name}">${t.name}<small>${PLACE_HINTS[t.id]}</small></button>`).join("");
+  $("r-district-row").hidden = pick.place === "Online class";
+}
 const filter = { kind: "all", medium: "all" };
 const chosenStars = {};
 
@@ -229,6 +234,7 @@ $("send").addEventListener("click", async () => {
   else if (!need) problem = "Please tell us what you need help with.";
   else if (!pick.days.size || !pick.times.size) problem = "Please tap at least one day and one time.";
   else if (hasContactInfo(name + " " + need)) problem = "Please remove phone numbers, emails or app names. The admin will contact the teacher for you.";
+  else if (pick.place !== "Online class" && !$("r-district").value) problem = "Please choose your district.";
   if (problem) { $("ask-error").innerHTML = `<p class="msg bad">${problem}</p>`; return; }
   $("ask-error").innerHTML = "";
   const free = [];
@@ -239,7 +245,7 @@ $("send").addEventListener("click", async () => {
   try {
     const id = await DB.add("requests", {
       uid: user.uid, student: name, gradeId: formGrade.id, gradeName: formGrade.name, subject: formSubject.name,
-      need, place: pick.place, free, made: new Date().toISOString(),
+      need, place: pick.place, district: pick.place === "Online class" ? "" : $("r-district").value, free, made: new Date().toISOString(),
       status: "new", teacherId: "", teacherName: "", when: "",
       preferTeacherId: pref ? pref.id : "", preferTeacherName: pref ? pref.name : ""
     });
@@ -265,7 +271,7 @@ function drawMine() {
     return `<div class="item">
       <div class="item-head"><h3 style="margin:0">${safe(r.subject)} · ${safe(r.gradeName)}</h3><span class="badge ${cls}">${label}</span></div>
       <p style="margin:0">${safe(r.need)}</p>
-      <div class="facts"><span>No. <b>${shortId(r.id)}</b></span><span>${safe(r.place)}</span><span>${timeAgo(r.made)}</span></div>
+      <div class="facts"><span>No. <b>${shortId(r.id)}</b></span><span>${safe(placeText(r.place))}${r.district ? " · " + safe(r.district) : ""}</span><span>${timeAgo(r.made)}</span></div>
       ${r.teacherName ? `<p class="msg info">Your teacher: <b>${safe(r.teacherName)}</b></p>` : ""}
       ${mySessions.filter(s => s.requestId === r.id).map(lessonHtml).join("")}
     </div>`;
@@ -297,7 +303,7 @@ document.addEventListener("click", e => {
   if (a) { e.preventDefault(); $("grade-cards").scrollIntoView({ behavior: "smooth" }); return; }
   const b = e.target.closest("button"); if (!b) return;
   const d = b.dataset;
-  if (d.place) { pick.place = d.place; document.querySelectorAll("[data-place]").forEach(x => x.classList.toggle("on", x === b)); }
+  if (d.place) { pick.place = d.place; drawPlaces(); }
   else if (d.day) { pick.days.has(d.day) ? pick.days.delete(d.day) : pick.days.add(d.day); drawTimes(); }
   else if (d.time) { pick.times.has(d.time) ? pick.times.delete(d.time) : pick.times.add(d.time); drawTimes(); }
   else if (d.kind) { filter.kind = d.kind; route(); }
@@ -312,7 +318,9 @@ const typingUnlock = () => !$("v-unlock").hidden && document.activeElement && !!
 const rerender = () => { if ($("v-form").hidden && !typingUnlock()) route(); };
 DB.watch("grades", l => { grades = l; route(); }, null, () => { $("grade-cards").innerHTML = `<p class="msg bad">Could not load. Check your internet.</p>`; });
 DB.watch("papers", l => { papers = l; rerender(); });
-DB.watch("settings", l => { paySettings = l.find(x => x.id === "payment") || {}; rerender(); });
+DB.watch("settings", l => { paySettings = l.find(x => x.id === "payment") || {}; rerender(); }, null, () => { /* old rules: no payment text yet */ });
+$("r-district").innerHTML = districtOptions("");
+drawPlaces();
 DB.watch("teachers", l => { teachers = l; if (!$("v-form").hidden) route(); });
 DB.onUser(u => {
   const changed = (u && u.uid) !== (user && user.uid) || (u && u.verified) !== (user && user.verified);

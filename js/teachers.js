@@ -1,5 +1,5 @@
 /* TND Guides – public teacher profiles */
-import DB, { LIVE } from "./db.js?v=7";
+import DB, { LIVE } from "./db.js?v=8";
 import { langSwitch, startTranslation } from "./i18n.js";
 import { $, safe, safeUrl, icon, starsHtml, initials, demoBanner, bottomNav, accountChip, classChips, lowestFee, DISTRICTS, CLASS_TYPES, SECTIONS } from "./common.js";
 

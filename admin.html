@@ -59,6 +59,7 @@
 
 <!-- ===== Admin app ===== -->
 <main class="wrap" id="app" hidden>
+  <div id="rules-banner" hidden></div>
   <div class="stack" style="margin-bottom:18px">
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
       <div style="margin-right:auto"><span class="eyebrow">Admin desk</span><h2 style="margin:0">Here is what needs you.</h2></div>
@@ -234,11 +235,16 @@
     <div id="forum-list" class="stack"></div>
   </section>
 
+  <details class="card" id="rules-card" style="margin-top:24px">
+    <summary style="cursor:pointer;font-weight:700">Firebase rules (after updates, or to add an admin)</summary>
+    <div id="rules-tool" class="stack" style="margin-top:12px"></div>
+  </details>
+
   <div style="margin-top:28px" id="demo-tools" hidden><button class="btn sm" id="reset">Reset demo data</button> <span class="hint" id="reset-note"></span></div>
 </main>
 
 <footer><div class="wrap">Only the admin sees teacher phone numbers. Students and teachers never contact each other directly.</div></footer>
 
-<script type="module" src="js/admin.js?v=7"></script>
+<script type="module" src="js/admin.js?v=8"></script>
 </body>
 </html>

@@ -123,12 +123,13 @@ service cloud.firestore {
     match /requests/{id} {
       allow read: if isAdmin() || isOwner();
       allow create: if verified()
-        && exactly(['uid', 'student', 'gradeId', 'gradeName', 'subject', 'need', 'place', 'free', 'made', 'status',
+        && exactly(['uid', 'student', 'gradeId', 'gradeName', 'subject', 'need', 'place', 'district', 'free', 'made', 'status',
                     'teacherId', 'teacherName', 'when', 'preferTeacherId', 'preferTeacherName'])
         && newData().uid == request.auth.uid
         && newData().status == 'new'
         && newData().teacherId == '' && newData().teacherName == '' && newData().when == ''
-        && newData().place in ['Online', 'At school']
+        && newData().place in ['Online class', 'Group class', 'Hall class', 'Individual class', 'Home visit']
+        && textOk('district', 40)
         && textReq('student', 40) && textReq('need', 400) && textReq('subject', 60)
         && textOk('gradeId', 40) && textOk('gradeName', 40) && textOk('made', 40)
         && textOk('preferTeacherId', 40) && textOk('preferTeacherName', 80)

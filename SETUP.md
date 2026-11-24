@@ -183,10 +183,14 @@ The paper links are hidden by the Firebase rules until the student has paid. Som
 
 ## Teachers joining
 
-- Teachers open **Teach with us** (`join.html`, also linked on the Teachers page and the home page). They log in and send their subjects, district, towns, class types (online, group, hall, individual) with fees, and free times. Their phone number goes only to you.
+- Teachers open **Teach with us** (`join.html`, also linked on the Teachers page and the home page). They log in and send their subjects, district, towns, class types (online, group, hall, individual, home visit) with fees or "Negotiable", and free times. Their phone number goes only to you.
 - In the **Teachers** tab, a list **Teachers who want to join** appears at the top. Call the teacher if you need to, then press **Accept and add**. They appear on the Teachers page straight away, with their fees and area. Or press **Reject** and type a reason they will see.
 - You can change any teacher's fees, district and class types later with **Change**.
 
 ## Updating the rules after a site update
+
+**Easiest way:** open the admin page, scroll to the bottom, open **Firebase rules**, check the admin Gmails, tap **Copy rules**, then follow the 4 steps shown there. The admin page also shows a yellow warning when your rules are too old.
+
+### By hand
 
 When the site gets new features, `firestore.rules` may change. Open it on GitHub, copy it, paste it into **Firestore Database → Rules**, put your admin Gmail(s) back into the `isAdmin()` list, and click **Publish**.

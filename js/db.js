@@ -25,5 +25,5 @@ try {
   demo = sessionStorage.getItem("tnd_demo") === "1";
 } catch (e) { /* ignore */ }
 export const LIVE = !!firebaseConfig.apiKey && !demo;
-const DB = LIVE ? await import("./db-firebase.js?v=7") : await import("./db-local.js?v=7");
+const DB = LIVE ? await import("./db-firebase.js?v=8") : await import("./db-local.js?v=8");
 export default DB;

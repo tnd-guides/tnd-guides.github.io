@@ -1,5 +1,5 @@
 /* TND Guides – teacher join request ("Teach with us") */
-import DB, { LIVE } from "./db.js?v=7";
+import DB, { LIVE } from "./db.js?v=8";
 import { langSwitch, startTranslation } from "./i18n.js";
 import { $, safe, byOrder, cleanLink, showToast, demoBanner, bottomNav, accountChip, loginLink, timeAgo,
          classEditorHtml, readClassEditor, classChips, districtOptions, DAYS, DAY_NAMES, TIMES, MEDIUMS } from "./common.js";
@@ -96,7 +96,7 @@ $("j-send").addEventListener("click", async () => {
   else if (!f.subjects.size) problem = "Please tick at least one subject.";
   else if (!$("j-district").value) problem = "Please choose your district.";
   else if (!classes.length) problem = "Please tick at least one class type.";
-  else if (classes.some(c => !c.fee)) problem = "Please type the fee for each class type you ticked.";
+  else if (classes.some(c => !c.fee && c.per !== "negotiable")) problem = "Please type the fee for each class type you ticked, or choose Negotiable.";
   else if (!f.days.size || !f.times.size) problem = "Please tick at least one free day and one free time.";
   if (problem) { $("j-error").innerHTML = `<p class="msg bad">${problem}</p>`; return; }
   $("j-error").innerHTML = "";

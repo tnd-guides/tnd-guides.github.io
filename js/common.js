@@ -200,12 +200,14 @@ export const CLASS_TYPES = [
   { id: "online", name: "Online class" },
   { id: "group", name: "Group class" },
   { id: "hall", name: "Hall class" },
-  { id: "individual", name: "Individual class" }
+  { id: "individual", name: "Individual class" },
+  { id: "home", name: "Home visit" }
 ];
 export const FEE_PER = [
   { id: "month", name: "per month" },
   { id: "class", name: "per class" },
-  { id: "hour", name: "per hour" }
+  { id: "hour", name: "per hour" },
+  { id: "negotiable", name: "Negotiable" }
 ];
 export const DISTRICTS = ["Ampara", "Anuradhapura", "Badulla", "Batticaloa", "Colombo", "Galle", "Gampaha", "Hambantota",
   "Jaffna", "Kalutara", "Kandy", "Kegalle", "Kilinochchi", "Kurunegala", "Mannar", "Matale", "Matara", "Monaragala",
@@ -213,7 +215,9 @@ export const DISTRICTS = ["Ampara", "Anuradhapura", "Badulla", "Batticaloa", "Co
 
 /* "Rs. 2,500 / month" */
 export function feeText(c) {
-  if (!c || !c.fee) return "";
+  if (!c) return "";
+  if (c.per === "negotiable") return "Negotiable";
+  if (!c.fee) return "";
   return "Rs. " + Number(c.fee).toLocaleString("en-US") + " / " + (c.per || "month");
 }
 /* Small chips showing each class type and its fee (used on teacher cards) */
@@ -221,7 +225,8 @@ export function classChips(classes) {
   return (classes || []).map(c => {
     const t = CLASS_TYPES.find(x => x.id === c.type);
     if (!t) return "";
-    return `<span class="fee-chip"><b>${safe(t.name)}</b>${c.fee ? `<span>${safe(feeText(c))}</span>` : ""}</span>`;
+    const f = feeText(c);
+    return `<span class="fee-chip"><b>${safe(t.name)}</b>${f ? `<span>${safe(f)}</span>` : ""}</span>`;
   }).join("");
 }
 /* Form rows: tick a class type, type its fee, choose per month/class/hour.
@@ -247,9 +252,14 @@ export const districtOptions = (chosen) => `<option value="">Choose district</op
 
 /* Lowest fee, for "From Rs. …" */
 export function lowestFee(classes) {
-  const f = (classes || []).filter(c => c.fee).sort((a, b) => a.fee - b.fee)[0];
+  const f = (classes || []).filter(c => c.fee && c.per !== "negotiable").sort((a, b) => a.fee - b.fee)[0];
   return f ? feeText(f) : "";
 }
+
+/* Where a student wants the class (old requests said "Online" / "At school") */
+export const PLACE_NAMES = CLASS_TYPES.map(t => t.name);
+export const placeText = p => (p === "Online" ? "Online class" : p === "At school" ? "Hall class" : p || "");
+export const placeTypeId = p => (CLASS_TYPES.find(t => t.name === placeText(p)) || {}).id || "";
 
 /* Paid papers: does this access record still allow papers? */
 export const accessActive = a => !!(a && a.untilMs && a.untilMs > Date.now());

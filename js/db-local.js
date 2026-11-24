@@ -3,7 +3,7 @@
    Admin login in demo mode: any email + password "demo". */
 import { DEFAULT_GRADES } from "./common.js";
 
-const KEY = "guruhub_demo_v4";
+const KEY = "guruhub_demo_v5";
 const listeners = [];
 let userCb = [];
 
@@ -58,7 +58,7 @@ function exampleStore() {
     grades, teachers, teacherPrivate, papers, paperLinks, settings, access: [], payments: [], teacherApps: [],
     requests: [
       { id: newId(), uid: "demo-ashan", student: "Ashan", gradeId: g("A/L Maths"), gradeName: "A/L Maths", subject: "Combined Maths",
-        need: "I don't understand integration by parts.", place: "Online", free: ["Mon-eve", "Sat-am"],
+        need: "I don't understand integration by parts.", place: "Online class", district: "", free: ["Mon-eve", "Sat-am"],
         made: new Date(Date.now() - 40 * 60000).toISOString(), status: "new", teacherId: "", teacherName: "", when: "",
         preferTeacherId: "", preferTeacherName: "" }
     ],
