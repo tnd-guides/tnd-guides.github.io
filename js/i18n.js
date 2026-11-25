@@ -5,7 +5,10 @@
 
 const LANGS = [["en", "EN"], ["si", "සිං"], ["ta", "த"]];
 let lang = "en";
-try { lang = localStorage.getItem("guruhub_lang") || "en"; } catch (e) { /* ignore */ }
+try {
+  lang = localStorage.getItem("guruhub_lang") || "";
+  if (!lang) { const n = (navigator.language || "").toLowerCase(); lang = n.startsWith("si") ? "si" : n.startsWith("ta") ? "ta" : "en"; }
+} catch (e) { lang = "en"; }
 if (!LANGS.some(l => l[0] === lang)) lang = "en";
 
 export const getLang = () => lang;
@@ -327,6 +330,13 @@ const LINES = [
   ["Your district", "ඔබේ දිස්ත්‍රික්කය", "உங்கள் மாவட்டம்"],
   ["(to find a class near you)", "(ඔබට ළඟ පන්තියක් සොයා ගැනීමට)", "(உங்களுக்கு அருகிலுள்ள வகுப்பைக் கண்டுபிடிக்க)"],
   ["Please type the fee for each class type you ticked, or choose Negotiable.", "ලකුණු කළ සෑම පන්ති වර්ගයකටම ගාස්තුව ලියන්න, නැත්නම් සාකච්ඡා කළ හැක තෝරන්න.", "குறித்த ஒவ்வொரு வகுப்பு வகைக்கும் கட்டணத்தை எழுதுங்கள், அல்லது பேசித் தீர்மானிக்கலாம் என்பதைத் தேர்ந்தெடுங்கள்."],
+  ["For parents", "දෙමාපියනි", "பெற்றோர்களே"],
+  ["Looking for qualified university students to give your child extra classes at home or online?", "ඔබගේ දරුවාට නිවසට පැමිණ හෝ Online ක්‍රමවේදය හරහා අමතර පන්ති කිරීමට සුදුසුකම් ලත් විශ්වවිද්‍යාලයීය සිසුන් සොයනවාද?", "உங்கள் பிள்ளைக்கு வீட்டுக்கு வந்து அல்லது இணையவழியாக மேலதிக வகுப்புகள் நடத்த தகுதியான பல்கலைக்கழக மாணவர்களைத் தேடுகிறீர்களா?"],
+  ["Here is the answer.", "එහෙනම් මෙන්න විසඳුම", "அப்படியானால் இதோ தீர்வு"],
+  ["We arrange for University of Peradeniya students, your child's big brothers and sisters, to teach at your home or online.", "පේරාදෙණිය විශ්ව විද්‍යාලයේ ඉගෙනුම ලබන අයියලා, අක්කලා නිවසටම ගෙන්වා ගෙන හෝ Online හරහා ඉගැන්වීමට අවස්ථාව අප සලසා දෙනවා..", "பேராதனைப் பல்கலைக்கழகத்தில் கல்வி கற்கும் அண்ணன்மார், அக்காமார் உங்கள் வீட்டுக்கே வந்து அல்லது இணையவழியாகக் கற்பிக்க நாம் வாய்ப்பளிக்கிறோம்."],
+  ["University of Peradeniya", "පේරාදෙණිය විශ්ව විද්‍යාලය", "பேராதனைப் பல்கலைக்கழகம்"],
+  ["Call us today", "අදම කතාකරන්න...", "இன்றே அழையுங்கள்..."],
+  ["Call", "අමතන්න", "அழையுங்கள்"],
   ["Log out and use an admin Gmail", "ඉවත් වී පරිපාලක Gmail එකක් භාවිතා කරන්න", "வெளியேறி நிர்வாகி Gmail-ஐப் பயன்படுத்துங்கள்"]
 ];
 
